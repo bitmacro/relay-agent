@@ -75,19 +75,13 @@ export async function getStats(): Promise<RelayStats> {
 
   const cwd = getStrfryCwd();
   try {
-    const { stdout: countOut } = await execFileAsync(
-      STRFRY_BIN,
-      ["export", "--count"],
-      { cwd: cwd || undefined }
-    );
-    total_events = parseInt(countOut.trim(), 10) || 0;
-  } catch {
-    // strfry export --count may not exist in all versions
-    const { stdout } = await execFileAsync("sh", [
+    const { stdout } = await execFileAsync("/bin/sh", [
       "-c",
       `${STRFRY_BIN} scan '{}' | wc -l`,
     ], { cwd: cwd || undefined });
     total_events = parseInt(stdout.trim(), 10) || 0;
+  } catch {
+    total_events = 0;
   }
 
   try {
@@ -102,10 +96,13 @@ export async function getStats(): Promise<RelayStats> {
 
   let db_size = "0";
   try {
-    const { stdout } = await execFileAsync("du", ["-sh", getStrfryDbPath()]);
+    const { stdout } = await execFileAsync("/bin/sh", [
+      "-c",
+      `du -sh ${getStrfryDbPath()} 2>/dev/null || echo "0"`,
+    ]);
     db_size = stdout.trim().split(/\s+/)[0] ?? "0";
   } catch {
-    // ignore
+    db_size = "unknown";
   }
 
   let uptime_seconds = 0;
