@@ -19,7 +19,7 @@ services:
     networks:
       - bitmacro
     ports:
-      - "7801:7800"
+      - "7811:7800"
     volumes:
       - ./nostr/private/data:/app/strfry-db
       - ./nostr/private/whitelist.txt:/app/whitelist.txt
@@ -42,7 +42,7 @@ services:
     networks:
       - bitmacro
     ports:
-      - "7802:7800"
+      - "7812:7800"
     volumes:
       - ./nostr/public/data:/app/strfry-db
     environment:
@@ -64,7 +64,7 @@ services:
     networks:
       - bitmacro
     ports:
-      - "7803:7800"
+      - "7813:7800"
     volumes:
       - ./nostr/paid/data:/app/strfry-db
       - ./nostr/paid/whitelist.txt:/app/whitelist.txt
