@@ -9,17 +9,19 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Stage 2: Runtime
+# Stage 2: Runtime (includes strfry binary for Docker-sidecar mode)
 FROM node:20-alpine
 
 WORKDIR /app
+
+# Copy strfry binary from official image (for spawn inside container)
+COPY --from=dockurr/strfry:latest /app/strfry /app/strfry
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 
 ENV NODE_ENV=production
+ENV STRFRY_BIN=/app/strfry
 EXPOSE 7800
 
-# Expect RELAY_AGENT_TOKEN and optionally STRFRY_BIN via env at runtime
-# Mount strfry binary and/or data volume as needed
-CMD ["sh", "-c", "node dist/bin/relay-agent.mjs --port 7800 --token $RELAY_AGENT_TOKEN"]
+CMD ["sh", "-c", "node dist/bin/relay-agent.mjs --port ${PORT:-7800} --token $RELAY_AGENT_TOKEN"]

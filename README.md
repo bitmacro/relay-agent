@@ -6,7 +6,7 @@
 
 **Manage your Nostr relay without touching the terminal.**
 
-`relay-agent` is a REST API agent that runs on your relay server and translates HTTP requests into strfry CLI commands. It is part of the [BitMacro Relay Manager](https://bitmacro.io) ecosystem — a SaaS product for Nostr relay operators.
+`relay-agent` is a REST API agent that runs on your relay server and translates HTTP requests into strfry CLI commands. It is part of the [BitMacro Relay Manager](https://bitmacro.io) ecosystem.
 
 ---
 
@@ -20,12 +20,24 @@ npx bitmacro-relay-agent --port 7800 --token your-secret-token
 
 ### Via Docker
 
+The image includes the strfry binary (from dockurr/strfry). Mount your strfry data volume:
+
 ```bash
-docker build -t relay-agent .
-docker run -p 7800:7800 -e RELAY_AGENT_TOKEN=your-secret-token relay-agent
+docker build -t bitmacro-relay-agent .
+docker run -p 7800:7800 \
+  -e RELAY_AGENT_TOKEN=your-secret-token \
+  -v /path/to/strfry-db:/app/strfry-db \
+  -v /path/to/whitelist.txt:/app/whitelist.txt \
+  bitmacro-relay-agent
 ```
 
-> **Note:** The Docker image does not include strfry. Mount your strfry binary and data directory as needed. See [Architecture](#architecture) below.
+**Multiple relays:** Use the compose fragment. Clone relay-agent next to your docker-compose.yml, then:
+
+```bash
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d relay-agent-private relay-agent-public relay-agent-paid
+```
+
+See `docker-compose.relay-agents.yml` for the full setup (1 agent per relay in v0.1).
 
 ---
 
@@ -88,7 +100,7 @@ bitmacro-api (Vercel)
     │  HTTP REST + Bearer JWT
     ▼
 relay-agent  ← this package
-    │  child_process execFile()
+    │  child_process spawn()
     ▼
 strfry (processo local C++ / LMDB)
 ```

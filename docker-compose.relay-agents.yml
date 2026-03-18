@@ -1,0 +1,78 @@
+# ================================================================
+# BitMacro Relay Agents - Docker Compose fragment (v0.1 — 1 relay per agent)
+#
+# Usage (from directory containing docker-compose.yml):
+#   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d
+#
+# Requires relay-agent/ cloned in same dir as docker-compose.yml.
+# Env vars (add to .env): RELAY_AGENT_TOKEN_PRIVATE, RELAY_AGENT_TOKEN_PUBLIC, RELAY_AGENT_TOKEN_PAID
+# ================================================================
+
+services:
+  relay-agent-private:
+    build:
+      context: ./relay-agent
+      dockerfile: Dockerfile
+    image: bitmacro-relay-agent:latest
+    container_name: relay-agent-private
+    restart: unless-stopped
+    networks:
+      - bitmacro
+    ports:
+      - "7801:7800"
+    volumes:
+      - ./nostr/private/data:/app/strfry-db
+      - ./nostr/private/whitelist.txt:/app/whitelist.txt
+    environment:
+      - RELAY_AGENT_TOKEN=${RELAY_AGENT_TOKEN_PRIVATE:-change_me}
+      - STRFRY_BIN=/app/strfry
+      - STRFRY_DB_PATH=/app/strfry-db
+      - WHITELIST_PATH=/app/whitelist.txt
+      - PORT=7800
+    depends_on:
+      - relay_private
+
+  relay-agent-public:
+    build:
+      context: ./relay-agent
+      dockerfile: Dockerfile
+    image: bitmacro-relay-agent:latest
+    container_name: relay-agent-public
+    restart: unless-stopped
+    networks:
+      - bitmacro
+    ports:
+      - "7802:7800"
+    volumes:
+      - ./nostr/public/data:/app/strfry-db
+    environment:
+      - RELAY_AGENT_TOKEN=${RELAY_AGENT_TOKEN_PUBLIC:-change_me}
+      - STRFRY_BIN=/app/strfry
+      - STRFRY_DB_PATH=/app/strfry-db
+      - WHITELIST_PATH=/app/whitelist.txt
+      - PORT=7800
+    depends_on:
+      - relay_public
+
+  relay-agent-paid:
+    build:
+      context: ./relay-agent
+      dockerfile: Dockerfile
+    image: bitmacro-relay-agent:latest
+    container_name: relay-agent-paid
+    restart: unless-stopped
+    networks:
+      - bitmacro
+    ports:
+      - "7803:7800"
+    volumes:
+      - ./nostr/paid/data:/app/strfry-db
+      - ./nostr/paid/whitelist.txt:/app/whitelist.txt
+    environment:
+      - RELAY_AGENT_TOKEN=${RELAY_AGENT_TOKEN_PAID:-change_me}
+      - STRFRY_BIN=/app/strfry
+      - STRFRY_DB_PATH=/app/strfry-db
+      - WHITELIST_PATH=/app/whitelist.txt
+      - PORT=7800
+    depends_on:
+      - relay_paid

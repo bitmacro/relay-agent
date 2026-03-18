@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Docker image includes strfry binary (from dockurr/strfry) for sidecar deployment
+- `docker-compose.relay-agents.yml` — compose fragment for multiple relays (1 agent per relay)
+
+### Fixed
+
+- Use spawn instead of exec — avoids EACCES under systemd/nohup
+- Spawn strfry binary directly (no /bin/sh) — fixes EACCES in restricted environments
+
+### Planned (v0.2)
+
+- Multi-relay support — single agent managing N relays via `/relays/:id/` API
+
 ## [0.1.0] - TBD
 
 ### Added
