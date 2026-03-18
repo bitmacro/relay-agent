@@ -1,11 +1,41 @@
-import { exec } from "child_process";
-import { promisify } from "util";
+import { spawn } from "child_process";
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { dirname } from "path";
 import { existsSync } from "fs";
 import type { NostrFilter, NostrEvent, RelayStats } from "./types.js";
 
-const execAsync = promisify(exec);
+function execAsync(
+  cmd: string,
+  opts: { maxBuffer?: number; cwd?: string; stdio?: unknown } = {}
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn("/bin/sh", ["-c", cmd], {
+      stdio: ["ignore", "pipe", "pipe"],
+      cwd: opts.cwd,
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (d) => {
+      stdout += d;
+    });
+    child.stderr.on("data", (d) => {
+      stderr += d;
+    });
+    child.on("close", (code) => {
+      if (code === 0) resolve({ stdout, stderr });
+      else
+        reject(
+          Object.assign(new Error(`Command failed: ${cmd}\n${stderr}`), {
+            stdout,
+            stderr,
+            code,
+            cmd,
+          })
+        );
+    });
+    child.on("error", reject);
+  });
+}
 
 const STRFRY_BIN = process.env.STRFRY_BIN ?? "strfry";
 const WHITELIST_PATH = process.env.WHITELIST_PATH ?? "/etc/strfry/whitelist.txt";
