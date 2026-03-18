@@ -33,24 +33,29 @@ function buildFilterJson(filter: NostrFilter): string {
 }
 
 export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
-  const filterJson = buildFilterJson(filter);
-  const cwd = getStrfryCwd();
-  const { stdout } = await execFileAsync(
-    STRFRY_BIN,
-    ["scan", filterJson],
-    { maxBuffer: 50 * 1024 * 1024, cwd: cwd || undefined }
-  );
-  const events: NostrEvent[] = [];
-  for (const line of stdout.trim().split("\n")) {
-    if (!line) continue;
-    try {
-      const event = JSON.parse(line) as NostrEvent;
-      events.push(event);
-    } catch {
-      // skip malformed lines
+  try {
+    const filterJson = buildFilterJson(filter);
+    const cwd = getStrfryCwd();
+    const { stdout } = await execFileAsync(
+      STRFRY_BIN,
+      ["scan", filterJson],
+      { maxBuffer: 50 * 1024 * 1024, cwd: cwd || undefined }
+    );
+    const events: NostrEvent[] = [];
+    for (const line of stdout.trim().split("\n")) {
+      if (!line) continue;
+      try {
+        const event = JSON.parse(line) as NostrEvent;
+        events.push(event);
+      } catch {
+        // skip malformed lines
+      }
     }
+    return events;
+  } catch (err) {
+    console.error("[strfry adapter] scanEvents error:", err);
+    throw err;
   }
-  return events;
 }
 
 export async function deleteEvent(id: string): Promise<void> {
