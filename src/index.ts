@@ -25,6 +25,7 @@ export function createServer(port: number) {
   return serve({
     fetch: app.fetch,
     port,
+    hostname: "0.0.0.0",
   });
 }
 

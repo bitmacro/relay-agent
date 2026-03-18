@@ -6,7 +6,7 @@
 
 **Manage your Nostr relay without touching the terminal.**
 
-`relay-agent` is a REST API agent that runs on your relay server and translates HTTP requests into strfry CLI commands. It is part of the [BitMacro Relay Manager](https://bitmacro.io) ecosystem — a SaaS product for Nostr relay operators.
+`relay-agent` is a REST API agent that runs on your relay server and translates HTTP requests into strfry CLI commands. It is part of the [BitMacro Relay Manager](https://bitmacro.io) ecosystem.
 
 ---
 
@@ -20,12 +20,24 @@ npx bitmacro-relay-agent --port 7800 --token your-secret-token
 
 ### Via Docker
 
+The image includes the strfry binary (from dockurr/strfry). Mount your strfry data volume:
+
 ```bash
-docker build -t relay-agent .
-docker run -p 7800:7800 -e RELAY_AGENT_TOKEN=your-secret-token relay-agent
+docker build -t bitmacro-relay-agent .
+docker run -p 7800:7800 \
+  -e RELAY_AGENT_TOKEN=your-secret-token \
+  -v /path/to/strfry-db:/app/strfry-db \
+  -v /path/to/whitelist.txt:/app/whitelist.txt \
+  bitmacro-relay-agent
 ```
 
-> **Note:** The Docker image does not include strfry. Mount your strfry binary and data directory as needed. See [Architecture](#architecture) below.
+**Multiple relays:** Use the compose fragment. Clone relay-agent next to your docker-compose.yml, then:
+
+```bash
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d relay-agent-private relay-agent-public relay-agent-paid
+```
+
+See `docker-compose.relay-agents.yml` for the full setup (1 agent per relay in v0.1).
 
 ---
 
@@ -88,12 +100,46 @@ bitmacro-api (Vercel)
     │  HTTP REST + Bearer JWT
     ▼
 relay-agent  ← this package
-    │  child_process execFile()
+    │  child_process spawn()
     ▼
 strfry (processo local C++ / LMDB)
 ```
 
 The relay-agent is **stateless** — it has no database. State lives in Supabase, managed by bitmacro-api. The relay-agent only translates HTTP calls into strfry CLI commands.
+
+---
+
+## Troubleshooting
+
+### 503 "relay unavailable"
+
+1. **Capture the error** — run logs in one terminal, then curl in another:
+   ```bash
+   # Terminal 1
+   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml logs -f relay-agent-private
+   # Terminal 2
+   curl -H "Authorization: Bearer TOKEN" "http://localhost:7811/events?limit=3"
+   ```
+   The strfry stderr will appear in the logs.
+
+2. **LMDB "Resource temporarily unavailable"** — relay and relay-agent share the same db. Increase `maxreaders` in your **relay's** strfry.conf (e.g. `./nostr/private/strfry.conf`):
+   ```
+   dbParams {
+     maxreaders = 512
+   }
+   ```
+   Then restart the relay: `docker restart relay_private`
+
+3. **Verify db path** — relay-agent mounts `./nostr/private/data:/app/strfry-db`. Your relay (`relay_private`) must use the **same** host path for its strfry db. Check your main `docker-compose.yml`:
+   ```bash
+   grep -A5 relay_private docker-compose.yml
+   ```
+
+4. **Test strfry inside container**:
+   ```bash
+   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml run --rm relay-agent-private sh -c 'ls -la /app/strfry-db && /app/strfry --config /app/strfry.conf scan "{}" | head -3'
+   ```
+   If `data.mdb` is missing or strfry fails, fix the volume path.
 
 ---
 

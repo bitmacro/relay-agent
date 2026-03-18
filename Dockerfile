@@ -9,17 +9,22 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Stage 2: Runtime
-FROM node:20-alpine
+# Stage 2: Runtime — use strfry image as base so strfry binary has its .so deps (lmdb, ssl, etc.)
+FROM dockurr/strfry:latest
+
+RUN apk add --no-cache nodejs
 
 WORKDIR /app
 
+# strfry binary + libs already at /app from base image
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
+COPY strfry.conf /app/strfry.conf
 
 ENV NODE_ENV=production
+ENV STRFRY_BIN=/app/strfry
 EXPOSE 7800
 
-# Expect RELAY_AGENT_TOKEN and optionally STRFRY_BIN via env at runtime
-# Mount strfry binary and/or data volume as needed
-CMD ["sh", "-c", "node dist/bin/relay-agent.mjs --port 7800 --token $RELAY_AGENT_TOKEN"]
+# Override any ENTRYPOINT from dockurr/strfry base (we run Node, not strfry relay)
+ENTRYPOINT []
+CMD ["sh", "-c", "node dist/bin/relay-agent.mjs --port ${PORT:-7800} --token $RELAY_AGENT_TOKEN"]

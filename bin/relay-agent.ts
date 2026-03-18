@@ -1,6 +1,13 @@
 import { parseArgs } from "util";
 import { createServer } from "../src/index.js";
 
+process.on("uncaughtException", (err) => {
+  console.error("[relay-agent] uncaughtException:", err);
+});
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("[relay-agent] unhandledRejection:", reason, promise);
+});
+
 const { values } = parseArgs({
   options: {
     port: { type: "string", short: "p", default: "7800" },
