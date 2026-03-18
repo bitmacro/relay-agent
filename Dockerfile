@@ -25,4 +25,6 @@ ENV NODE_ENV=production
 ENV STRFRY_BIN=/app/strfry
 EXPOSE 7800
 
+# Override any ENTRYPOINT from dockurr/strfry base (we run Node, not strfry relay)
+ENTRYPOINT []
 CMD ["sh", "-c", "node dist/bin/relay-agent.mjs --port ${PORT:-7800} --token $RELAY_AGENT_TOKEN"]
