@@ -1,18 +1,11 @@
 /**
- * EACCES diagnosis (nohup/PM2/systemd vs interactive):
+ * EACCES fix: avoid /bin/sh entirely.
  *
- * exec() fails with EACCES when the parent was started via nohup/PM2/systemd
- * because:
- * 1. exec() does NOT pass stdio options to its internal spawn — Node's exec()
- *    always uses default stdio (inherit stdin, pipe stdout/stderr).
- * 2. nohup closes stdin (fd 0) and redirects stdout/stderr. The child inherits
- *    the parent's fd 0. A closed or weird stdin can cause the kernel to deny
- *    execve("/bin/sh") in some environments (session, cgroup, or fd state).
- * 3. Interactive sessions have a proper TTY; nohup/detached processes do not.
- *    The inherited fd layout differs and can trigger EACCES on spawn.
+ * spawn("/bin/sh", ["-c", cmd]) fails with EACCES when the parent was started
+ * via nohup/PM2/systemd — even with stdio: ['ignore', 'pipe', 'pipe'].
+ * The kernel denies execve("/bin/sh") in detached processes.
  *
- * Fix: use spawn() directly with stdio: ['ignore', 'pipe', 'pipe'] so stdin
- * is explicitly /dev/null, never inherited. No fd inheritance from parent.
+ * Fix: spawn the target binary directly with args. No shell invocation.
  */
 import { spawn } from "child_process";
 import { readFile, writeFile, mkdir } from "fs/promises";
@@ -20,14 +13,15 @@ import { dirname } from "path";
 import { existsSync } from "fs";
 import type { NostrFilter, NostrEvent, RelayStats } from "./types.js";
 
-const EXEC_TIMEOUT_MS = 30_000;
+const SPAWN_TIMEOUT_MS = 30_000;
 
-function execAsync(
-  cmd: string,
-  opts: { maxBuffer?: number; cwd?: string; stdio?: unknown } = {}
+function spawnAsync(
+  bin: string,
+  args: string[],
+  opts: { maxBuffer?: number; cwd?: string } = {}
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const child = spawn("/bin/sh", ["-c", cmd], {
+    const child = spawn(bin, args, {
       stdio: ["ignore", "pipe", "pipe"],
       cwd: opts.cwd,
     });
@@ -35,6 +29,7 @@ function execAsync(
     let stderr = "";
     const maxBuffer = opts.maxBuffer ?? 10 * 1024 * 1024;
     let settled = false;
+    const cmd = `${bin} ${args.join(" ")}`;
 
     const finish = (fn: () => void) => {
       if (settled) return;
@@ -47,7 +42,7 @@ function execAsync(
       child.kill("SIGKILL");
       finish(() =>
         reject(
-          Object.assign(new Error(`Command timed out after ${EXEC_TIMEOUT_MS}ms: ${cmd}`), {
+          Object.assign(new Error(`Command timed out after ${SPAWN_TIMEOUT_MS}ms: ${cmd}`), {
             stdout,
             stderr,
             cmd,
@@ -55,7 +50,7 @@ function execAsync(
           })
         )
       );
-    }, EXEC_TIMEOUT_MS);
+    }, SPAWN_TIMEOUT_MS);
 
     child.stdout.on("data", (d) => {
       stdout += d;
@@ -133,14 +128,10 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
   try {
     const filterJson = buildFilterJson(filter);
     const cwd = getStrfryCwd();
-    const { stdout } = await execAsync(
-      `${STRFRY_BIN} scan '${filterJson.replace(/'/g, "'\\''")}'`,
-      {
-        maxBuffer: 50 * 1024 * 1024,
-        cwd: cwd || undefined,
-        stdio: ["ignore", "pipe", "pipe"],
-      }
-    );
+    const { stdout } = await spawnAsync(STRFRY_BIN, ["scan", filterJson], {
+      maxBuffer: 50 * 1024 * 1024,
+      cwd: cwd || undefined,
+    });
     const events: NostrEvent[] = [];
     for (const line of stdout.trim().split("\n")) {
       if (!line) continue;
@@ -161,19 +152,17 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
 export async function deleteEvent(id: string): Promise<void> {
   const filterJson = JSON.stringify({ ids: [id] });
   const cwd = getStrfryCwd();
-  await execAsync(
-    `${STRFRY_BIN} delete --filter '${filterJson.replace(/'/g, "'\\''")}'`,
-    { cwd: cwd || undefined, stdio: ["ignore", "pipe", "pipe"] }
-  );
+  await spawnAsync(STRFRY_BIN, ["delete", "--filter", filterJson], {
+    cwd: cwd || undefined,
+  });
 }
 
 export async function deleteByPubkey(pubkey: string): Promise<void> {
   const filterJson = JSON.stringify({ authors: [pubkey] });
   const cwd = getStrfryCwd();
-  await execAsync(
-    `${STRFRY_BIN} delete --filter '${filterJson.replace(/'/g, "'\\''")}'`,
-    { cwd: cwd || undefined, stdio: ["ignore", "pipe", "pipe"] }
-  );
+  await spawnAsync(STRFRY_BIN, ["delete", "--filter", filterJson], {
+    cwd: cwd || undefined,
+  });
 }
 
 export async function getStats(): Promise<RelayStats> {
@@ -182,19 +171,18 @@ export async function getStats(): Promise<RelayStats> {
 
   const cwd = getStrfryCwd();
   try {
-    const { stdout } = await execAsync(
-      `${STRFRY_BIN} scan '{}' | wc -l`,
-      { cwd: cwd || undefined, stdio: ["ignore", "pipe", "pipe"] }
-    );
-    total_events = parseInt(stdout.trim(), 10) || 0;
+    const { stdout } = await spawnAsync(STRFRY_BIN, ["scan", "{}"], {
+      cwd: cwd || undefined,
+      maxBuffer: 50 * 1024 * 1024,
+    });
+    total_events = stdout.trim().split("\n").filter(Boolean).length;
   } catch {
     total_events = 0;
   }
 
   try {
-    const { stdout } = await execAsync(`${STRFRY_BIN} --version`, {
+    const { stdout } = await spawnAsync(STRFRY_BIN, ["--version"], {
       cwd: cwd || undefined,
-      stdio: ["ignore", "pipe", "pipe"],
     });
     const match = stdout.match(/strfry\s+([\d.]+)/i);
     strfry_version = match?.[1] ?? "unknown";
@@ -204,10 +192,7 @@ export async function getStats(): Promise<RelayStats> {
 
   let db_size = "0";
   try {
-    const { stdout } = await execAsync(
-      `du -sh ${getStrfryDbPath()} 2>/dev/null || echo "0"`,
-      { stdio: ["ignore", "pipe", "pipe"] }
-    );
+    const { stdout } = await spawnAsync("du", ["-sh", getStrfryDbPath()]);
     db_size = stdout.trim().split(/\s+/)[0] ?? "0";
   } catch {
     db_size = "unknown";
@@ -215,14 +200,10 @@ export async function getStats(): Promise<RelayStats> {
 
   let uptime_seconds = 0;
   try {
-    const { stdout: pidOut } = await execAsync("pgrep -x strfry", {
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    const { stdout: pidOut } = await spawnAsync("pgrep", ["-x", "strfry"]);
     const pid = pidOut.trim().split("\n")[0];
     if (pid) {
-      const { stdout } = await execAsync(`ps -o etimes= -p ${pid}`, {
-        stdio: ["ignore", "pipe", "pipe"],
-      });
+      const { stdout } = await spawnAsync("ps", ["-o", "etimes=", "-p", pid]);
       uptime_seconds = parseInt(stdout.trim(), 10) || 0;
     }
   } catch {
