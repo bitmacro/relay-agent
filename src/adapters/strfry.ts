@@ -1,11 +1,11 @@
-import { execFile } from "child_process";
+import { exec } from "child_process";
 import { promisify } from "util";
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { dirname } from "path";
 import { existsSync } from "fs";
 import type { NostrFilter, NostrEvent, RelayStats } from "./types.js";
 
-const execFileAsync = promisify(execFile);
+const execAsync = promisify(exec);
 
 const STRFRY_BIN = process.env.STRFRY_BIN ?? "strfry";
 const WHITELIST_PATH = process.env.WHITELIST_PATH ?? "/etc/strfry/whitelist.txt";
@@ -36,9 +36,8 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
   try {
     const filterJson = buildFilterJson(filter);
     const cwd = getStrfryCwd();
-    const { stdout } = await execFileAsync(
-      STRFRY_BIN,
-      ["scan", filterJson],
+    const { stdout } = await execAsync(
+      `${STRFRY_BIN} scan '${filterJson.replace(/'/g, "'\\''")}'`,
       { maxBuffer: 50 * 1024 * 1024, cwd: cwd || undefined }
     );
     const events: NostrEvent[] = [];
@@ -61,17 +60,19 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
 export async function deleteEvent(id: string): Promise<void> {
   const filterJson = JSON.stringify({ ids: [id] });
   const cwd = getStrfryCwd();
-  await execFileAsync(STRFRY_BIN, ["delete", "--filter", filterJson], {
-    cwd: cwd || undefined,
-  });
+  await execAsync(
+    `${STRFRY_BIN} delete --filter '${filterJson.replace(/'/g, "'\\''")}'`,
+    { cwd: cwd || undefined }
+  );
 }
 
 export async function deleteByPubkey(pubkey: string): Promise<void> {
   const filterJson = JSON.stringify({ authors: [pubkey] });
   const cwd = getStrfryCwd();
-  await execFileAsync(STRFRY_BIN, ["delete", "--filter", filterJson], {
-    cwd: cwd || undefined,
-  });
+  await execAsync(
+    `${STRFRY_BIN} delete --filter '${filterJson.replace(/'/g, "'\\''")}'`,
+    { cwd: cwd || undefined }
+  );
 }
 
 export async function getStats(): Promise<RelayStats> {
@@ -80,17 +81,17 @@ export async function getStats(): Promise<RelayStats> {
 
   const cwd = getStrfryCwd();
   try {
-    const { stdout } = await execFileAsync("/bin/sh", [
-      "-c",
+    const { stdout } = await execAsync(
       `${STRFRY_BIN} scan '{}' | wc -l`,
-    ], { cwd: cwd || undefined });
+      { cwd: cwd || undefined }
+    );
     total_events = parseInt(stdout.trim(), 10) || 0;
   } catch {
     total_events = 0;
   }
 
   try {
-    const { stdout } = await execFileAsync(STRFRY_BIN, ["--version"], {
+    const { stdout } = await execAsync(`${STRFRY_BIN} --version`, {
       cwd: cwd || undefined,
     });
     const match = stdout.match(/strfry\s+([\d.]+)/i);
@@ -101,10 +102,9 @@ export async function getStats(): Promise<RelayStats> {
 
   let db_size = "0";
   try {
-    const { stdout } = await execFileAsync("/bin/sh", [
-      "-c",
-      `du -sh ${getStrfryDbPath()} 2>/dev/null || echo "0"`,
-    ]);
+    const { stdout } = await execAsync(
+      `du -sh ${getStrfryDbPath()} 2>/dev/null || echo "0"`
+    );
     db_size = stdout.trim().split(/\s+/)[0] ?? "0";
   } catch {
     db_size = "unknown";
@@ -112,15 +112,10 @@ export async function getStats(): Promise<RelayStats> {
 
   let uptime_seconds = 0;
   try {
-    const { stdout: pidOut } = await execFileAsync("pgrep", ["-x", "strfry"]);
+    const { stdout: pidOut } = await execAsync("pgrep -x strfry");
     const pid = pidOut.trim().split("\n")[0];
     if (pid) {
-      const { stdout } = await execFileAsync("ps", [
-        "-o",
-        "etimes=",
-        "-p",
-        pid,
-      ]);
+      const { stdout } = await execAsync(`ps -o etimes= -p ${pid}`);
       uptime_seconds = parseInt(stdout.trim(), 10) || 0;
     }
   } catch {
