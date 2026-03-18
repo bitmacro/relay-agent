@@ -27,6 +27,7 @@ services:
       - RELAY_AGENT_TOKEN=${RELAY_AGENT_TOKEN_PRIVATE:-change_me}
       - STRFRY_BIN=/app/strfry
       - STRFRY_DB_PATH=/app/strfry-db
+      - STRFRY_CONFIG=/app/strfry.conf
       - WHITELIST_PATH=/app/whitelist.txt
       - PORT=7800
     depends_on:
@@ -49,6 +50,7 @@ services:
       - RELAY_AGENT_TOKEN=${RELAY_AGENT_TOKEN_PUBLIC:-change_me}
       - STRFRY_BIN=/app/strfry
       - STRFRY_DB_PATH=/app/strfry-db
+      - STRFRY_CONFIG=/app/strfry.conf
       - WHITELIST_PATH=/app/whitelist.txt
       - PORT=7800
     depends_on:
@@ -72,6 +74,7 @@ services:
       - RELAY_AGENT_TOKEN=${RELAY_AGENT_TOKEN_PAID:-change_me}
       - STRFRY_BIN=/app/strfry
       - STRFRY_DB_PATH=/app/strfry-db
+      - STRFRY_CONFIG=/app/strfry.conf
       - WHITELIST_PATH=/app/whitelist.txt
       - PORT=7800
     depends_on:

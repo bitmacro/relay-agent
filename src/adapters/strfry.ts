@@ -144,7 +144,9 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
     }
     return events;
   } catch (err) {
-    console.error("[strfry adapter] scanEvents error:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    const stderr = err && typeof err === "object" && "stderr" in err ? String((err as { stderr?: string }).stderr) : "";
+    console.error("[strfry adapter] scanEvents error:", msg, stderr ? `\nstderr: ${stderr}` : "");
     throw err;
   }
 }

@@ -19,6 +19,7 @@ COPY --from=dockurr/strfry:latest /app/strfry /app/strfry
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
+COPY strfry.conf /app/strfry.conf
 
 ENV NODE_ENV=production
 ENV STRFRY_BIN=/app/strfry
