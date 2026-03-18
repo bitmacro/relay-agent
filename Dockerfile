@@ -9,14 +9,14 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Stage 2: Runtime (includes strfry binary for Docker-sidecar mode)
-FROM node:20-alpine
+# Stage 2: Runtime — use strfry image as base so strfry binary has its .so deps (lmdb, ssl, etc.)
+FROM dockurr/strfry:latest
+
+RUN apk add --no-cache nodejs
 
 WORKDIR /app
 
-# Copy strfry binary from official image (for spawn inside container)
-COPY --from=dockurr/strfry:latest /app/strfry /app/strfry
-
+# strfry binary + libs already at /app from base image
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 COPY strfry.conf /app/strfry.conf
