@@ -11,6 +11,7 @@ export default defineConfig({
   clean: true,
   splitting: false,
   sourcemap: true,
+  noExternal: ["hono", "@hono/node-server"],
   banner: {
     js: "#!/usr/bin/env node",
   },
