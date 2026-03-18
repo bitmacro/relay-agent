@@ -122,12 +122,20 @@ The relay-agent is **stateless** — it has no database. State lives in Supabase
    ```
    The strfry stderr will appear in the logs.
 
-2. **Verify db path** — relay-agent mounts `./nostr/private/data:/app/strfry-db`. Your relay (`relay_private`) must use the **same** host path for its strfry db. Check your main `docker-compose.yml`:
+2. **LMDB "Resource temporarily unavailable"** — relay and relay-agent share the same db. Increase `maxreaders` in your **relay's** strfry.conf (e.g. `./nostr/private/strfry.conf`):
+   ```
+   dbParams {
+     maxreaders = 512
+   }
+   ```
+   Then restart the relay: `docker restart relay_private`
+
+3. **Verify db path** — relay-agent mounts `./nostr/private/data:/app/strfry-db`. Your relay (`relay_private`) must use the **same** host path for its strfry db. Check your main `docker-compose.yml`:
    ```bash
    grep -A5 relay_private docker-compose.yml
    ```
 
-3. **Test strfry inside container**:
+4. **Test strfry inside container**:
    ```bash
    docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml run --rm relay-agent-private sh -c 'ls -la /app/strfry-db && /app/strfry --config /app/strfry.conf scan "{}" | head -3'
    ```
