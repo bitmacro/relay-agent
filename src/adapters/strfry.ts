@@ -38,7 +38,11 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
     const cwd = getStrfryCwd();
     const { stdout } = await execAsync(
       `${STRFRY_BIN} scan '${filterJson.replace(/'/g, "'\\''")}'`,
-      { maxBuffer: 50 * 1024 * 1024, cwd: cwd || undefined }
+      {
+        maxBuffer: 50 * 1024 * 1024,
+        cwd: cwd || undefined,
+        stdio: ["ignore", "pipe", "pipe"],
+      }
     );
     const events: NostrEvent[] = [];
     for (const line of stdout.trim().split("\n")) {
@@ -62,7 +66,7 @@ export async function deleteEvent(id: string): Promise<void> {
   const cwd = getStrfryCwd();
   await execAsync(
     `${STRFRY_BIN} delete --filter '${filterJson.replace(/'/g, "'\\''")}'`,
-    { cwd: cwd || undefined }
+    { cwd: cwd || undefined, stdio: ["ignore", "pipe", "pipe"] }
   );
 }
 
@@ -71,7 +75,7 @@ export async function deleteByPubkey(pubkey: string): Promise<void> {
   const cwd = getStrfryCwd();
   await execAsync(
     `${STRFRY_BIN} delete --filter '${filterJson.replace(/'/g, "'\\''")}'`,
-    { cwd: cwd || undefined }
+    { cwd: cwd || undefined, stdio: ["ignore", "pipe", "pipe"] }
   );
 }
 
@@ -83,7 +87,7 @@ export async function getStats(): Promise<RelayStats> {
   try {
     const { stdout } = await execAsync(
       `${STRFRY_BIN} scan '{}' | wc -l`,
-      { cwd: cwd || undefined }
+      { cwd: cwd || undefined, stdio: ["ignore", "pipe", "pipe"] }
     );
     total_events = parseInt(stdout.trim(), 10) || 0;
   } catch {
@@ -93,6 +97,7 @@ export async function getStats(): Promise<RelayStats> {
   try {
     const { stdout } = await execAsync(`${STRFRY_BIN} --version`, {
       cwd: cwd || undefined,
+      stdio: ["ignore", "pipe", "pipe"],
     });
     const match = stdout.match(/strfry\s+([\d.]+)/i);
     strfry_version = match?.[1] ?? "unknown";
@@ -103,7 +108,8 @@ export async function getStats(): Promise<RelayStats> {
   let db_size = "0";
   try {
     const { stdout } = await execAsync(
-      `du -sh ${getStrfryDbPath()} 2>/dev/null || echo "0"`
+      `du -sh ${getStrfryDbPath()} 2>/dev/null || echo "0"`,
+      { stdio: ["ignore", "pipe", "pipe"] }
     );
     db_size = stdout.trim().split(/\s+/)[0] ?? "0";
   } catch {
@@ -112,10 +118,14 @@ export async function getStats(): Promise<RelayStats> {
 
   let uptime_seconds = 0;
   try {
-    const { stdout: pidOut } = await execAsync("pgrep -x strfry");
+    const { stdout: pidOut } = await execAsync("pgrep -x strfry", {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
     const pid = pidOut.trim().split("\n")[0];
     if (pid) {
-      const { stdout } = await execAsync(`ps -o etimes= -p ${pid}`);
+      const { stdout } = await execAsync(`ps -o etimes= -p ${pid}`, {
+        stdio: ["ignore", "pipe", "pipe"],
+      });
       uptime_seconds = parseInt(stdout.trim(), 10) || 0;
     }
   } catch {
