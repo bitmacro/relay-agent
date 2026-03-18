@@ -1,8 +1,26 @@
+/**
+ * EACCES diagnosis (nohup/PM2/systemd vs interactive):
+ *
+ * exec() fails with EACCES when the parent was started via nohup/PM2/systemd
+ * because:
+ * 1. exec() does NOT pass stdio options to its internal spawn — Node's exec()
+ *    always uses default stdio (inherit stdin, pipe stdout/stderr).
+ * 2. nohup closes stdin (fd 0) and redirects stdout/stderr. The child inherits
+ *    the parent's fd 0. A closed or weird stdin can cause the kernel to deny
+ *    execve("/bin/sh") in some environments (session, cgroup, or fd state).
+ * 3. Interactive sessions have a proper TTY; nohup/detached processes do not.
+ *    The inherited fd layout differs and can trigger EACCES on spawn.
+ *
+ * Fix: use spawn() directly with stdio: ['ignore', 'pipe', 'pipe'] so stdin
+ * is explicitly /dev/null, never inherited. No fd inheritance from parent.
+ */
 import { spawn } from "child_process";
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { dirname } from "path";
 import { existsSync } from "fs";
 import type { NostrFilter, NostrEvent, RelayStats } from "./types.js";
+
+const EXEC_TIMEOUT_MS = 30_000;
 
 function execAsync(
   cmd: string,
@@ -15,25 +33,74 @@ function execAsync(
     });
     let stdout = "";
     let stderr = "";
+    const maxBuffer = opts.maxBuffer ?? 10 * 1024 * 1024;
+    let settled = false;
+
+    const finish = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      fn();
+    };
+
+    const timeout = setTimeout(() => {
+      child.kill("SIGKILL");
+      finish(() =>
+        reject(
+          Object.assign(new Error(`Command timed out after ${EXEC_TIMEOUT_MS}ms: ${cmd}`), {
+            stdout,
+            stderr,
+            cmd,
+            code: null,
+          })
+        )
+      );
+    }, EXEC_TIMEOUT_MS);
+
     child.stdout.on("data", (d) => {
       stdout += d;
+      if (Buffer.byteLength(stdout, "utf8") > maxBuffer) {
+        child.kill("SIGKILL");
+        finish(() =>
+          reject(
+            Object.assign(new Error(`stdout exceeded maxBuffer (${maxBuffer} bytes)`), {
+              stdout,
+              stderr,
+              cmd,
+              code: null,
+            })
+          )
+        );
+      }
     });
     child.stderr.on("data", (d) => {
       stderr += d;
     });
     child.on("close", (code) => {
-      if (code === 0) resolve({ stdout, stderr });
-      else
+      finish(() => {
+        if (code === 0) resolve({ stdout, stderr });
+        else
+          reject(
+            Object.assign(new Error(`Command failed: ${cmd}\n${stderr}`), {
+              stdout,
+              stderr,
+              code,
+              cmd,
+            })
+          );
+      });
+    });
+    child.on("error", (err) => {
+      finish(() =>
         reject(
-          Object.assign(new Error(`Command failed: ${cmd}\n${stderr}`), {
+          Object.assign(err, {
             stdout,
             stderr,
-            code,
             cmd,
           })
-        );
+        )
+      );
     });
-    child.on("error", reject);
   });
 }
 
