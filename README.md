@@ -109,6 +109,32 @@ The relay-agent is **stateless** — it has no database. State lives in Supabase
 
 ---
 
+## Troubleshooting
+
+### 503 "relay unavailable"
+
+1. **Capture the error** — run logs in one terminal, then curl in another:
+   ```bash
+   # Terminal 1
+   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml logs -f relay-agent-private
+   # Terminal 2
+   curl -H "Authorization: Bearer TOKEN" "http://localhost:7811/events?limit=3"
+   ```
+   The strfry stderr will appear in the logs.
+
+2. **Verify db path** — relay-agent mounts `./nostr/private/data:/app/strfry-db`. Your relay (`relay_private`) must use the **same** host path for its strfry db. Check your main `docker-compose.yml`:
+   ```bash
+   grep -A5 relay_private docker-compose.yml
+   ```
+
+3. **Test strfry inside container**:
+   ```bash
+   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml run --rm relay-agent-private sh -c 'ls -la /app/strfry-db && /app/strfry --config /app/strfry.conf scan "{}" | head -3'
+   ```
+   If `data.mdb` is missing or strfry fails, fix the volume path.
+
+---
+
 ## Security
 
 - **Run on a private network.** The relay-agent should run on the operator's server and **never be exposed directly to the internet**.
