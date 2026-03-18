@@ -100,10 +100,16 @@ function spawnAsync(
 }
 
 const STRFRY_BIN = process.env.STRFRY_BIN ?? "strfry";
+const STRFRY_CONFIG = process.env.STRFRY_CONFIG;
 const WHITELIST_PATH = process.env.WHITELIST_PATH ?? "/etc/strfry/whitelist.txt";
 
 function getStrfryDbPath(): string {
   return process.env.STRFRY_DB_PATH ?? "./strfry-db";
+}
+
+function strfryArgs(subcommand: string, ...args: string[]): string[] {
+  const base = STRFRY_CONFIG ? ["--config", STRFRY_CONFIG, subcommand] : [subcommand];
+  return [...base, ...args];
 }
 
 function getStrfryCwd(): string | undefined {
@@ -128,7 +134,7 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
   try {
     const filterJson = buildFilterJson(filter);
     const cwd = getStrfryCwd();
-    const { stdout } = await spawnAsync(STRFRY_BIN, ["scan", filterJson], {
+    const { stdout } = await spawnAsync(STRFRY_BIN, strfryArgs("scan", filterJson), {
       maxBuffer: 50 * 1024 * 1024,
       cwd: cwd || undefined,
     });
@@ -154,7 +160,7 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
 export async function deleteEvent(id: string): Promise<void> {
   const filterJson = JSON.stringify({ ids: [id] });
   const cwd = getStrfryCwd();
-  await spawnAsync(STRFRY_BIN, ["delete", "--filter", filterJson], {
+  await spawnAsync(STRFRY_BIN, strfryArgs("delete", "--filter", filterJson), {
     cwd: cwd || undefined,
   });
 }
@@ -162,7 +168,7 @@ export async function deleteEvent(id: string): Promise<void> {
 export async function deleteByPubkey(pubkey: string): Promise<void> {
   const filterJson = JSON.stringify({ authors: [pubkey] });
   const cwd = getStrfryCwd();
-  await spawnAsync(STRFRY_BIN, ["delete", "--filter", filterJson], {
+  await spawnAsync(STRFRY_BIN, strfryArgs("delete", "--filter", filterJson), {
     cwd: cwd || undefined,
   });
 }
@@ -173,7 +179,7 @@ export async function getStats(): Promise<RelayStats> {
 
   const cwd = getStrfryCwd();
   try {
-    const { stdout } = await spawnAsync(STRFRY_BIN, ["scan", "{}"], {
+    const { stdout } = await spawnAsync(STRFRY_BIN, strfryArgs("scan", "{}"), {
       cwd: cwd || undefined,
       maxBuffer: 50 * 1024 * 1024,
     });
