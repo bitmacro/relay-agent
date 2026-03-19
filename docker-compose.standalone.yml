@@ -1,0 +1,76 @@
+# Standalone compose for testing from within relay-agent directory.
+# Usage: cd ~/relay-agent && docker compose -f docker-compose.standalone.yml up -d
+#
+# Requires: mkdir -p nostr/private/data nostr/public/data nostr/paid/data
+#           echo "" > nostr/private/whitelist.txt
+#           echo "" > nostr/paid/whitelist.txt
+
+services:
+  relay-agent-private:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/bitmacro/relay-agent:latest
+    container_name: relay-agent-private
+    restart: unless-stopped
+    networks:
+      - bitmacro
+    ports:
+      - "7811:7800"
+    volumes:
+      - ./nostr/private/data:/app/strfry-db
+      - ./nostr/private/whitelist.txt:/app/whitelist.txt
+    environment:
+      - RELAY_AGENT_TOKEN=${RELAY_AGENT_TOKEN_PRIVATE:-change_me}
+      - STRFRY_BIN=/app/strfry
+      - STRFRY_DB_PATH=/app/strfry-db
+      - STRFRY_CONFIG=/app/strfry.conf
+      - WHITELIST_PATH=/app/whitelist.txt
+      - PORT=7800
+
+  relay-agent-public:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/bitmacro/relay-agent:latest
+    container_name: relay-agent-public
+    restart: unless-stopped
+    networks:
+      - bitmacro
+    ports:
+      - "7812:7800"
+    volumes:
+      - ./nostr/public/data:/app/strfry-db
+    environment:
+      - RELAY_AGENT_TOKEN=${RELAY_AGENT_TOKEN_PUBLIC:-change_me}
+      - STRFRY_BIN=/app/strfry
+      - STRFRY_DB_PATH=/app/strfry-db
+      - STRFRY_CONFIG=/app/strfry.conf
+      - WHITELIST_PATH=/app/whitelist.txt
+      - PORT=7800
+
+  relay-agent-paid:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/bitmacro/relay-agent:latest
+    container_name: relay-agent-paid
+    restart: unless-stopped
+    networks:
+      - bitmacro
+    ports:
+      - "7813:7800"
+    volumes:
+      - ./nostr/paid/data:/app/strfry-db
+      - ./nostr/paid/whitelist.txt:/app/whitelist.txt
+    environment:
+      - RELAY_AGENT_TOKEN=${RELAY_AGENT_TOKEN_PAID:-change_me}
+      - STRFRY_BIN=/app/strfry
+      - STRFRY_DB_PATH=/app/strfry-db
+      - STRFRY_CONFIG=/app/strfry.conf
+      - WHITELIST_PATH=/app/whitelist.txt
+      - PORT=7800
+
+networks:
+  bitmacro:
+    driver: bridge
