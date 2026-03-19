@@ -1,9 +1,7 @@
-# Standalone compose for testing from within relay-agent directory.
-# Usage: cd ~/relay-agent && docker compose -f docker-compose.standalone.yml up -d
-#
+# Run from ~/relay-agent:  docker compose up -d
 # Requires: mkdir -p nostr/private/data nostr/public/data nostr/paid/data
-#           echo "" > nostr/private/whitelist.txt
-#           echo "" > nostr/paid/whitelist.txt
+#           touch nostr/private/whitelist.txt nostr/paid/whitelist.txt
+# If your nostr data is elsewhere, symlink:  ln -s /path/to/nostr ./nostr
 
 services:
   relay-agent-private:
