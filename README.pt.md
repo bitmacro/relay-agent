@@ -33,11 +33,27 @@ docker run -p 7800:7800 \
   bitmacro-relay-agent
 ```
 
-**Múltiplos relays:** Use o fragmento compose. Clone o relay-agent junto ao docker-compose.yml:
+**Múltiplos relays:** Use o fragmento compose. Coloque o relay-agent junto ao docker-compose.yml.
+
+### Deploy no servidor (fluxo completo)
 
 ```bash
+# 1. Clone (ou pull) o repo
+git clone https://github.com/bitmacro/relay-agent.git relay-agent
+
+# 2. Configure .env no diretório que contém o docker-compose.yml
+echo "RELAY_AGENT_TOKEN_PRIVATE=seu-token" >> .env
+echo "RELAY_AGENT_TOKEN_PUBLIC=seu-token" >> .env
+echo "RELAY_AGENT_TOKEN_PAID=seu-token" >> .env
+
+# 3. Pull das imagens do GHCR (ou build local se a testar antes do merge)
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml pull
+
+# 4. Inicie os serviços
 docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d relay-agent-private relay-agent-public relay-agent-paid
 ```
+
+**Antes da imagem estar no GHCR:** Use `build` em vez de `pull` — o compose inclui fallback. Execute `docker compose ... build` e depois `up -d`.
 
 Consulte `docker-compose.relay-agents.yml` para o setup completo (1 agente por relay na v0.1).
 
