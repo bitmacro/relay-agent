@@ -6,26 +6,26 @@ labels: bug
 assignees: ''
 ---
 
-## Descrição
+## Description
 A clear and concise description of what the bug is.
 
-## Comportamento esperado
+## Expected behavior
 What you expected to happen.
 
-## Comportamento actual
+## Actual behavior
 What actually happens.
 
-## Relay software e versão
+## Relay software and version
 - strfry / nostr-rs-relay / other: ___
-- Versão: ___
+- Version: ___
 
-## Node versão
-- Versão: ___
+## Node version
+- Version: ___
 
-## SO
+## OS
 - OS: ___
 
-## Logs relevantes
+## Relevant logs
 ```
 Paste any relevant logs here.
 ```

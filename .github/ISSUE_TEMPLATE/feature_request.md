@@ -6,14 +6,14 @@ labels: enhancement
 assignees: ''
 ---
 
-## Problema que resolve
+## Problem to solve
 A clear and concise description of what the problem is. Ex: "I'm always frustrated when [...]"
 
-## Solução proposta
+## Proposed solution
 A clear and concise description of what you want to happen.
 
-## Alternativas consideradas
+## Alternatives considered
 A clear and concise description of any alternative solutions or features you've considered.
 
-## Relay software alvo
+## Target relay software
 - strfry / nostr-rs-relay / khatru / other: ___

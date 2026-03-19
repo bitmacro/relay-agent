@@ -103,6 +103,19 @@ const STRFRY_BIN = process.env.STRFRY_BIN ?? "strfry";
 const STRFRY_CONFIG = process.env.STRFRY_CONFIG;
 const WHITELIST_PATH = process.env.WHITELIST_PATH ?? "/etc/strfry/whitelist.txt";
 
+function logStrfryError(operation: string, err: unknown): void {
+  const msg = err instanceof Error ? err.message : String(err);
+  const extra = err && typeof err === "object" ? err as Record<string, unknown> : {};
+  const stderr = typeof extra.stderr === "string" ? extra.stderr : "";
+  const cmd = typeof extra.cmd === "string" ? extra.cmd : "";
+  const code = extra.code != null ? String(extra.code) : "";
+  const parts = [`[strfry adapter] ${operation} failed:`, msg];
+  if (cmd) parts.push(`Command: ${cmd}`);
+  if (code) parts.push(`Exit code: ${code}`);
+  if (stderr) parts.push(`stderr: ${stderr}`);
+  console.error(parts.join("\n"));
+}
+
 function getStrfryDbPath(): string {
   return process.env.STRFRY_DB_PATH ?? "./strfry-db";
 }
@@ -150,27 +163,35 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
     }
     return events;
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const stderr = err && typeof err === "object" && "stderr" in err ? String((err as { stderr?: string }).stderr) : "";
-    console.error("[strfry adapter] scanEvents error:", msg, stderr ? `\nstderr: ${stderr}` : "");
+    logStrfryError("scanEvents", err);
     throw err;
   }
 }
 
 export async function deleteEvent(id: string): Promise<void> {
-  const filterJson = JSON.stringify({ ids: [id] });
-  const cwd = getStrfryCwd();
-  await spawnAsync(STRFRY_BIN, strfryArgs("delete", "--filter", filterJson), {
-    cwd: cwd || undefined,
-  });
+  try {
+    const filterJson = JSON.stringify({ ids: [id] });
+    const cwd = getStrfryCwd();
+    await spawnAsync(STRFRY_BIN, strfryArgs("delete", "--filter", filterJson), {
+      cwd: cwd || undefined,
+    });
+  } catch (err) {
+    logStrfryError("deleteEvent", err);
+    throw err;
+  }
 }
 
 export async function deleteByPubkey(pubkey: string): Promise<void> {
-  const filterJson = JSON.stringify({ authors: [pubkey] });
-  const cwd = getStrfryCwd();
-  await spawnAsync(STRFRY_BIN, strfryArgs("delete", "--filter", filterJson), {
-    cwd: cwd || undefined,
-  });
+  try {
+    const filterJson = JSON.stringify({ authors: [pubkey] });
+    const cwd = getStrfryCwd();
+    await spawnAsync(STRFRY_BIN, strfryArgs("delete", "--filter", filterJson), {
+      cwd: cwd || undefined,
+    });
+  } catch (err) {
+    logStrfryError("deleteByPubkey", err);
+    throw err;
+  }
 }
 
 export async function getStats(): Promise<RelayStats> {
