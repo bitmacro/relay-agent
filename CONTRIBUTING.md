@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to relay-agent.
 
-## Setup local
+## Local setup
 
 1. Clone the repository:
    ```bash
@@ -22,7 +22,7 @@ Thank you for your interest in contributing to relay-agent.
 
 4. For integration tests, install strfry locally. See [strfry documentation](https://github.com/hoytech/strfry) for build instructions. Integration tests will skip if strfry is not found.
 
-## Modo dev
+## Dev mode
 
 ```bash
 npm run dev -- --port 7800 --token test123
@@ -33,7 +33,7 @@ Or with tsx directly:
 npx tsx src/index.ts
 ```
 
-## Processo de PR
+## PR process
 
 1. Fork the repository
 2. Create a branch with a descriptive name:
@@ -45,7 +45,7 @@ npx tsx src/index.ts
 5. Open a PR against `main`
 6. Wait for CI and review
 
-## Convenção de commits
+## Commit convention
 
 We use [Conventional Commits](https://www.conventionalcommits.org/):
 
@@ -54,7 +54,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 - `chore:` — maintenance
 - `adapter:` — relay adapter changes
 
-## Novos adapters
+## Adding adapters
 
 To add support for a new relay (e.g. nostr-rs-relay, khatru):
 
@@ -63,7 +63,7 @@ To add support for a new relay (e.g. nostr-rs-relay, khatru):
 3. Add integration tests specific to that relay
 4. Document any environment variables required
 
-## O que NÃO aceitar
+## What we do NOT accept
 
 - Breaking changes to the REST API without versioning
 - Heavy dependencies that bloat the package

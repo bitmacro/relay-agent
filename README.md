@@ -8,6 +8,8 @@
 
 `relay-agent` is a REST API agent that runs on your relay server and translates HTTP requests into strfry CLI commands. It is part of the [BitMacro Relay Manager](https://bitmacro.io) ecosystem.
 
+> [Português](README.pt.md)
+
 ---
 
 ## Quick Start
@@ -80,6 +82,7 @@ Authorization: Bearer <your-token>
 | `RELAY_AGENT_TOKEN` | — | **Required.** Bearer token for API auth |
 | `STRFRY_BIN` | `strfry` | Path to strfry binary |
 | `STRFRY_DB_PATH` | `./strfry-db` | Path to strfry database directory |
+| `STRFRY_CONFIG` | — | Path to strfry config file (for explicit db path) |
 | `WHITELIST_PATH` | `/etc/strfry/whitelist.txt` | Path to whitelist file |
 | `PORT` | `7800` | HTTP server port |
 
@@ -102,7 +105,7 @@ bitmacro-api (Vercel)
 relay-agent  ← this package
     │  child_process spawn()
     ▼
-strfry (processo local C++ / LMDB)
+strfry (local C++ process / LMDB)
 ```
 
 The relay-agent is **stateless** — it has no database. State lives in Supabase, managed by bitmacro-api. The relay-agent only translates HTTP calls into strfry CLI commands.

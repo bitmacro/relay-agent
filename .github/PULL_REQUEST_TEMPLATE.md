@@ -1,19 +1,19 @@
-## O que faz este PR
+## What this PR does
 
-## Tipo de mudança
+## Type of change
 - [ ] Bug fix
-- [ ] Nova funcionalidade  
-- [ ] Novo adapter (relay: ___)
+- [ ] New feature
+- [ ] New adapter (relay: ___)
 - [ ] Docs / chore
 
-## Testado com
-- strfry versão: ___
-- Node versão: ___
-- SO: ___
+## Tested with
+- strfry version: ___
+- Node version: ___
+- OS: ___
 
 ## Checklist
-- [ ] `npm test` passa localmente
-- [ ] Sem breaking changes nos endpoints REST existentes
-- [ ] Novo código tem testes
-- [ ] CHANGELOG.md atualizado
-- [ ] Documentação atualizada se necessário
+- [ ] `npm test` passes locally
+- [ ] No breaking changes to existing REST endpoints
+- [ ] New code has tests
+- [ ] CHANGELOG.md updated
+- [ ] Documentation updated if needed
