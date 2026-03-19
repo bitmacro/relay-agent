@@ -1,5 +1,5 @@
 {
-  "name": "bitmacro-relay-agent",
+  "name": "@bitmacro/relay-agent",
   "version": "0.1.0",
   "description": "REST API agent for managing Nostr relays without touching the terminal",
   "license": "MIT",
@@ -8,8 +8,11 @@
     "type": "git",
     "url": "https://github.com/bitmacro/relay-agent"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
-    "bitmacro-relay-agent": "./dist/bin/relay-agent.mjs"
+    "relay-agent": "./dist/bin/relay-agent.mjs"
   },
   "files": ["dist/"],
   "engines": {

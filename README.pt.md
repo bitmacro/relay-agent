@@ -50,7 +50,7 @@ Consulte `docker-compose.relay-agents.yml` para o setup completo (1 agente por r
 | `GET` | `/health` | Health check (sem auth) | `{"status":"ok","timestamp":"..."}` |
 | `GET` | `/events` | Listar eventos (filtro NIP-01) | `[{id, pubkey, kind, ...}, ...]` |
 | `DELETE` | `/events/:id` | Apagar evento por id | `{"deleted":"<id>"}` |
-| `GET` | `/stats` | Estatísticas do relay | `{total_events, db_size, uptime_seconds, strfry_version}` |
+| `GET` | `/stats` | Estatísticas do relay | `{total_events, db_size, uptime, version}` |
 | `POST` | `/policy/block` | Bloquear pubkey | `{"blocked":"<pubkey>"}` |
 | `POST` | `/policy/allow` | Permitir pubkey | `{"allowed":"<pubkey>"}` |
 | `GET` | `/users` | Listar pubkeys únicas | `{"users":["<pubkey>", ...]}` |
@@ -85,6 +85,7 @@ Authorization: Bearer <seu-token>
 | `STRFRY_CONFIG` | — | Caminho para o ficheiro de config strfry (path explícito da db) |
 | `WHITELIST_PATH` | `/etc/strfry/whitelist.txt` | Caminho para o ficheiro whitelist |
 | `PORT` | `7800` | Porta do servidor HTTP |
+| `ALLOWED_ORIGINS` | — | Origens CORS extra separadas por vírgula (defaults: `https://admin.bitmacro.io`, `http://localhost:3000`) |
 
 ---
 

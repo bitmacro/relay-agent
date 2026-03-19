@@ -9,22 +9,21 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Stage 2: Runtime — use strfry image as base so strfry binary has its .so deps (lmdb, ssl, etc.)
-FROM dockurr/strfry:latest
+# Stage 2: Runtime — strfry base provides binary + libs (lmdb, zstd, ssl)
+FROM dockurr/strfry:1.0.4
 
 RUN apk add --no-cache nodejs
 
 WORKDIR /app
 
-# strfry binary + libs already at /app from base image
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 COPY strfry.conf /app/strfry.conf
 
 ENV NODE_ENV=production
 ENV STRFRY_BIN=/app/strfry
+ENV PORT=7800
 EXPOSE 7800
 
-# Override any ENTRYPOINT from dockurr/strfry base (we run Node, not strfry relay)
 ENTRYPOINT []
-CMD ["sh", "-c", "node dist/bin/relay-agent.mjs --port ${PORT:-7800} --token $RELAY_AGENT_TOKEN"]
+CMD ["node", "dist/bin/relay-agent.mjs"]
