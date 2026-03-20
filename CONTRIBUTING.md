@@ -63,6 +63,11 @@ To add support for a new relay (e.g. nostr-rs-relay, khatru):
 3. Add integration tests specific to that relay
 4. Document any environment variables required
 
+## Related projects
+
+- [relay-panel](https://github.com/bitmacro/relay-panel) — Frontend (BSL)
+- [relay-api](https://github.com/bitmacro/relay-api) — Central hub (private)
+
 ## What we do NOT accept
 
 - Breaking changes to the REST API without versioning
