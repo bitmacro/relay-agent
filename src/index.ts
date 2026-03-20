@@ -9,7 +9,7 @@ import { policyRoutes } from "./routes/policy.js";
 import { usersRoutes } from "./routes/users.js";
 
 const DEFAULT_ORIGINS = [
-  "https://admin.bitmacro.io",
+  "https://relay-panel.bitmacro.io",
   "http://localhost:3000",
 ];
 const EXTRA_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")

@@ -143,7 +143,7 @@ Authorization: Bearer <your-token>
 | `STRFRY_CONFIG` | — | Path to strfry config file (for explicit db path) |
 | `WHITELIST_PATH` | `/etc/strfry/whitelist.txt` | Path to whitelist file |
 | `PORT` | `7800` | HTTP server port |
-| `ALLOWED_ORIGINS` | — | Comma-separated extra CORS origins (defaults include `https://admin.bitmacro.io`, `http://localhost:3000`) |
+| `ALLOWED_ORIGINS` | — | Comma-separated extra CORS origins (defaults include `https://relay-panel.bitmacro.io`, `http://localhost:3000`) |
 
 ---
 
@@ -158,16 +158,19 @@ Authorization: Bearer <your-token>
 ## Architecture
 
 ```
-bitmacro-api (Vercel)
+relay-panel
+    │  HTTP + JWT
+    ▼
+relay-api (Vercel)
     │  HTTP REST + Bearer JWT
     ▼
-relay-agent  ← this package
+relay-agent (this repo)
     │  child_process spawn()
     ▼
 strfry (local C++ process / LMDB)
 ```
 
-The relay-agent is **stateless** — it has no database. State lives in Supabase, managed by bitmacro-api. The relay-agent only translates HTTP calls into strfry CLI commands.
+The relay-agent is **stateless** — it has no database. State lives in Supabase, managed by relay-api. The relay-agent only translates HTTP calls into strfry CLI commands.
 
 ---
 
@@ -208,7 +211,7 @@ The relay-agent is **stateless** — it has no database. State lives in Supabase
 ## Security
 
 - **Run on a private network.** The relay-agent should run on the operator's server and **never be exposed directly to the internet**.
-- Access is controlled by the bitmacro-api, which proxies requests with a shared Bearer token.
+- Access is controlled by the relay-api, which proxies requests with a shared Bearer token.
 - Use a strong, random token in production. Rotate it if compromised.
 
 ---
