@@ -21,7 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Multi-relay support — single agent managing N relays via `/relays/:id/` API
 
-## [0.1.0] - TBD
+## [0.1.1] - 2026-03-20
+
+### Fixed
+
+- Add OIDC permissions (id-token: write) to publish workflow for npm provenance
+
+## [0.1.0] - 2026-03-20
 
 ### Added
 
@@ -30,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GET /health` — health check (public)
 - `GET /events` — list events with NIP-01 filter (kinds, authors, since, until, limit)
 - `DELETE /events/:id` — delete event by id
-- `GET /stats` — relay statistics (total_events, db_size, uptime, strfry_version)
+- `GET /stats` — relay statistics (total_events, db_size, uptime, version)
 - `POST /policy/block` — block pubkey (whitelist + delete events)
 - `POST /policy/allow` — allow pubkey (whitelist)
 - `GET /users` — list unique pubkeys with events
