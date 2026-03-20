@@ -6,15 +6,17 @@
   "author": "BitMacro <hello@bitmacro.io>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitmacro/relay-agent"
+    "url": "git+https://github.com/bitmacro/relay-agent.git"
   },
   "publishConfig": {
     "access": "public"
   },
   "bin": {
-    "relay-agent": "./dist/bin/relay-agent.mjs"
+    "relay-agent": "dist/bin/relay-agent.mjs"
   },
-  "files": ["dist/"],
+  "files": [
+    "dist/"
+  ],
   "engines": {
     "node": ">=18"
   },
