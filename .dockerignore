@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.github
+.env
+.env.*
+*.log
+.DS_Store
+coverage
+.vitest
+*.md
+!README.md
+tests

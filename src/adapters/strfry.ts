@@ -194,20 +194,40 @@ export async function deleteByPubkey(pubkey: string): Promise<void> {
   }
 }
 
+const SCAN_COUNT_TIMEOUT_MS = 60_000;
+
+function spawnScanCount(cwd: string | undefined): Promise<number> {
+  return new Promise((resolve) => {
+    const child = spawn(STRFRY_BIN, strfryArgs("scan", "{}"), {
+      stdio: ["ignore", "pipe", "pipe"],
+      cwd: cwd || undefined,
+    });
+    let count = 0;
+    const timeout = setTimeout(() => {
+      child.kill("SIGKILL");
+      resolve(count);
+    }, SCAN_COUNT_TIMEOUT_MS);
+    child.stdout?.on("data", (d: Buffer) => {
+      for (let i = 0; i < d.length; i++) if (d[i] === 10) count++;
+    });
+    child.stderr?.on("data", () => {});
+    child.on("close", () => {
+      clearTimeout(timeout);
+      resolve(count);
+    });
+    child.on("error", () => {
+      clearTimeout(timeout);
+      resolve(0);
+    });
+  });
+}
+
 export async function getStats(): Promise<RelayStats> {
   let total_events = 0;
   let strfry_version = "unknown";
 
   const cwd = getStrfryCwd();
-  try {
-    const { stdout } = await spawnAsync(STRFRY_BIN, strfryArgs("scan", "{}"), {
-      cwd: cwd || undefined,
-      maxBuffer: 50 * 1024 * 1024,
-    });
-    total_events = stdout.trim().split("\n").filter(Boolean).length;
-  } catch {
-    total_events = 0;
-  }
+  total_events = await spawnScanCount(cwd);
 
   try {
     const { stdout } = await spawnAsync(STRFRY_BIN, ["--version"], {

@@ -1,7 +1,7 @@
 # bitmacro-relay-agent
 
 [![CI](https://github.com/bitmacro/relay-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/bitmacro/relay-agent/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/bitmacro-relay-agent.svg)](https://www.npmjs.com/package/bitmacro-relay-agent)
+[![npm version](https://img.shields.io/npm/v/@bitmacro/relay-agent.svg)](https://www.npmjs.com/package/@bitmacro/relay-agent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Manage your Nostr relay without touching the terminal.**
@@ -17,27 +17,46 @@
 ### Via npx
 
 ```bash
-npx bitmacro-relay-agent --port 7800 --token your-secret-token
+npx @bitmacro/relay-agent --port 7800 --token your-secret-token
 ```
 
 ### Via Docker
 
-The image includes the strfry binary (from dockurr/strfry). Mount your strfry data volume:
+Multi-arch image (amd64, arm64) at `ghcr.io/bitmacro/relay-agent`. Includes strfry binary. Mount your strfry data volume:
 
 ```bash
-docker build -t bitmacro-relay-agent .
+docker pull ghcr.io/bitmacro/relay-agent:latest
 docker run -p 7800:7800 \
   -e RELAY_AGENT_TOKEN=your-secret-token \
   -v /path/to/strfry-db:/app/strfry-db \
   -v /path/to/whitelist.txt:/app/whitelist.txt \
-  bitmacro-relay-agent
+  ghcr.io/bitmacro/relay-agent:latest
 ```
 
-**Multiple relays:** Use the compose fragment. Clone relay-agent next to your docker-compose.yml, then:
+Or build locally: `docker build -t relay-agent .`
+
+**Multiple relays:** Use the compose fragment. Place relay-agent next to your docker-compose.yml.
+
+### Server deployment (complete flow)
 
 ```bash
+# 1. Clone (or pull) the relay-manager repo with relay-agent
+git clone https://github.com/bitmacro/relay-agent.git relay-agent
+# Or if you have the full setup: clone relay-manager, relay-agent is a subdir
+
+# 2. Configure .env in the directory containing docker-compose.yml
+echo "RELAY_AGENT_TOKEN_PRIVATE=your-secret-token" >> .env
+echo "RELAY_AGENT_TOKEN_PUBLIC=your-secret-token" >> .env
+echo "RELAY_AGENT_TOKEN_PAID=your-secret-token" >> .env
+
+# 3. Pull images from GHCR (or build locally if testing before merge)
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml pull
+
+# 4. Start the services
 docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d relay-agent-private relay-agent-public relay-agent-paid
 ```
+
+**Before GHCR has the image:** Use `build` instead of `pull` — the compose includes a build fallback. Run `docker compose ... build` then `up -d`.
 
 See `docker-compose.relay-agents.yml` for the full setup (1 agent per relay in v0.1).
 
@@ -50,7 +69,7 @@ See `docker-compose.relay-agents.yml` for the full setup (1 agent per relay in v
 | `GET` | `/health` | Health check (no auth) | `{"status":"ok","timestamp":"..."}` |
 | `GET` | `/events` | List events (NIP-01 filter) | `[{id, pubkey, kind, ...}, ...]` |
 | `DELETE` | `/events/:id` | Delete event by id | `{"deleted":"<id>"}` |
-| `GET` | `/stats` | Relay statistics | `{total_events, db_size, uptime_seconds, strfry_version}` |
+| `GET` | `/stats` | Relay statistics | `{total_events, db_size, uptime, version}` |
 | `POST` | `/policy/block` | Block pubkey | `{"blocked":"<pubkey>"}` |
 | `POST` | `/policy/allow` | Allow pubkey | `{"allowed":"<pubkey>"}` |
 | `GET` | `/users` | List unique pubkeys | `{"users":["<pubkey>", ...]}` |
@@ -85,6 +104,7 @@ Authorization: Bearer <your-token>
 | `STRFRY_CONFIG` | — | Path to strfry config file (for explicit db path) |
 | `WHITELIST_PATH` | `/etc/strfry/whitelist.txt` | Path to whitelist file |
 | `PORT` | `7800` | HTTP server port |
+| `ALLOWED_ORIGINS` | — | Comma-separated extra CORS origins (defaults include `https://admin.bitmacro.io`, `http://localhost:3000`) |
 
 ---
 
