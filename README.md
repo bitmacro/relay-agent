@@ -8,6 +8,12 @@
 
 `relay-agent` is a REST API agent that runs on your relay server and translates HTTP requests into strfry CLI commands. It is part of the [BitMacro Relay Manager](https://bitmacro.io) ecosystem.
 
+| Project | Description | License |
+|---------|-------------|---------|
+| **relay-agent** | This repo — REST API for strfry | MIT |
+| [relay-api](https://github.com/bitmacro/relay-api) | Central hub (Supabase, proxy) | Private |
+| [relay-panel](https://github.com/bitmacro/relay-panel) | Frontend | BSL 1.1 |
+
 ---
 
 ## Quick Start
