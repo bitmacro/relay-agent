@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-03-20
+
+### Fixed
+
+- Resolve symlink in `getVersion()` — fixes `--version` returning `0.0.0` when run via npx (symlink in `node_modules/.bin/`)
+
 ## [0.1.3] - 2026-03-20
 
 ### Fixed
