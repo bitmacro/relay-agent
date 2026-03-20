@@ -1,2 +1,5 @@
-*                  @bitmacro-thiago
-src/adapters/      @bitmacro-thiago
+# Default owners for the entire repository
+* @bitmacro/owners
+
+# Critical adapter logic — relay integration layer
+src/adapters/ @thgcarvalho
