@@ -7,19 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Docker image includes strfry binary (from dockurr/strfry) for sidecar deployment
-- `docker-compose.relay-agents.yml` — compose fragment for multiple relays (1 agent per relay)
+## [0.1.3] - 2026-03-20
 
 ### Fixed
 
-- Use spawn instead of exec — avoids EACCES under systemd/nohup
-- Spawn strfry binary directly (no /bin/sh) — fixes EACCES in restricted environments
+- Add `--version` and `--help` flags to CLI — fixes crash when passing unknown options (e.g. `npx @bitmacro/relay-agent --version`)
 
-### Planned (v0.2)
+### Added
 
-- Multi-relay support — single agent managing N relays via `/relays/:id/` API
+- `-v, --version` — prints package version and exits
+- `-h, --help` — prints usage and exits
+
+## [0.1.2] - 2026-03-20
+
+- Package.json cleanup and NPM_TOKEN docs (fix/npm-publish-token)
 
 ## [0.1.1] - 2026-03-20
 
