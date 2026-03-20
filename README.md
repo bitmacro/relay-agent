@@ -18,6 +18,8 @@
 npx @bitmacro/relay-agent --port 7800 --token your-secret-token
 ```
 
+Use `--version` or `--help` to check version or CLI options.
+
 ### Via Docker
 
 Multi-arch image (amd64, arm64) at `ghcr.io/bitmacro/relay-agent`. Includes strfry binary. Mount your strfry data volume:

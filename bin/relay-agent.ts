@@ -1,5 +1,5 @@
 import { parseArgs } from "util";
-import { readFileSync } from "fs";
+import { readFileSync, realpathSync } from "fs";
 import { dirname, join } from "path";
 import { createServer } from "../src/index.js";
 
@@ -10,7 +10,9 @@ process.on("unhandledRejection", (reason, promise) => {
   console.error("[relay-agent] unhandledRejection:", reason, promise);
 });
 
-const __dirname = dirname(process.argv[1] ?? ".");
+// Resolve symlink (npx runs via node_modules/.bin/ symlink) so __dirname points to dist/bin/
+const scriptPath = process.argv[1] ? realpathSync(process.argv[1]) : ".";
+const __dirname = dirname(scriptPath);
 
 function getVersion(): string {
   for (const rel of ["../../package.json", "../package.json"]) {
