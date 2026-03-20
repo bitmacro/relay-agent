@@ -1,4 +1,4 @@
-# bitmacro-relay-agent
+# @bitmacro/relay-agent
 
 [![CI](https://github.com/bitmacro/relay-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/bitmacro/relay-agent/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@bitmacro/relay-agent.svg)](https://www.npmjs.com/package/@bitmacro/relay-agent)
@@ -7,8 +7,6 @@
 **Manage your Nostr relay without touching the terminal.**
 
 `relay-agent` is a REST API agent that runs on your relay server and translates HTTP requests into strfry CLI commands. It is part of the [BitMacro Relay Manager](https://bitmacro.io) ecosystem.
-
-> [Português](README.pt.md)
 
 ---
 
@@ -40,9 +38,8 @@ Or build locally: `docker build -t relay-agent .`
 ### Server deployment (complete flow)
 
 ```bash
-# 1. Clone (or pull) the relay-manager repo with relay-agent
+# 1. Clone (or pull) relay-agent into a subdir next to your docker-compose.yml
 git clone https://github.com/bitmacro/relay-agent.git relay-agent
-# Or if you have the full setup: clone relay-manager, relay-agent is a subdir
 
 # 2. Configure .env in the directory containing docker-compose.yml
 echo "RELAY_AGENT_TOKEN_PRIVATE=your-secret-token" >> .env
@@ -59,6 +56,40 @@ docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.
 **Before GHCR has the image:** Use `build` instead of `pull` — the compose includes a build fallback. Run `docker compose ... build` then `up -d`.
 
 See `docker-compose.relay-agents.yml` for the full setup (1 agent per relay in v0.1).
+
+---
+
+## Operational Commands
+
+For operators using the compose fragment (`docker-compose.yml` + `relay-agent/docker-compose.relay-agents.yml`):
+
+```bash
+# Rebuild and restart a specific agent
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d --build relay-agent-public
+
+# Rebuild and restart all relay agents
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d --build relay-agent-private relay-agent-public relay-agent-paid
+
+# Pull latest image and restart (when using GHCR)
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml pull
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d relay-agent-private relay-agent-public relay-agent-paid
+
+# View logs
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml logs -f relay-agent-public
+
+# Stop all relay agents
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml stop relay-agent-private relay-agent-public relay-agent-paid
+```
+
+### Smoke Test
+
+Verify the agent can talk to strfry LMDB:
+
+```bash
+docker exec relay-agent-public sh -c 'curl -s -m 60 -H "Authorization: Bearer $RELAY_AGENT_TOKEN" http://localhost:7800/stats'
+```
+
+Expected response: `{"total_events":...,"db_size":"...","uptime":...,"version":"..."}`
 
 ---
 
@@ -112,7 +143,7 @@ Authorization: Bearer <your-token>
 
 | relay-agent | strfry |
 |-------------|--------|
-| 0.1.x | 0.9.x |
+| 0.1.x | 1.0.x |
 
 ---
 
