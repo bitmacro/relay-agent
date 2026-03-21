@@ -109,6 +109,7 @@ Expected response: `{"total_events":...,"db_size":"...","uptime":...,"version":"
 | `GET` | `/events` | List events (NIP-01 filter) | `[{id, pubkey, kind, ...}, ...]` |
 | `DELETE` | `/events/:id` | Delete event by id | `{"deleted":"<id>"}` |
 | `GET` | `/stats` | Relay statistics | `{total_events, db_size, uptime, version}` |
+| `GET` | `/policy` | List whitelist entries | `{entries:[{pubkey,status}]}` |
 | `POST` | `/policy/block` | Block pubkey | `{"blocked":"<pubkey>"}` |
 | `POST` | `/policy/allow` | Allow pubkey | `{"allowed":"<pubkey>"}` |
 | `GET` | `/users` | List unique pubkeys | `{"users":["<pubkey>", ...]}` |
