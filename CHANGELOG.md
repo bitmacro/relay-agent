@@ -12,15 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Resolve symlink in `getVersion()` — fixes `--version` returning `0.0.0` when run via npx (symlink in `node_modules/.bin/`)
-
-## [0.1.3] - 2026-03-20
-
-### Fixed
-
 - Add `--version` and `--help` flags to CLI — fixes crash when passing unknown options (e.g. `npx @bitmacro/relay-agent --version`)
 
 ### Added
 
+- `GET /policy` — list whitelist entries (filter comments and invalid pubkeys)
 - `-v, --version` — prints package version and exits
 - `-h, --help` — prints usage and exits
 
