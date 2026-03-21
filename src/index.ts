@@ -9,7 +9,8 @@ import { policyRoutes } from "./routes/policy.js";
 import { usersRoutes } from "./routes/users.js";
 
 const DEFAULT_ORIGINS = [
-  "https://admin.bitmacro.io",
+  "https://relay-panel.bitmacro.cloud",
+  "https://relay-panel.bitmacro.pro",
   "http://localhost:3000",
 ];
 const EXTRA_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
@@ -20,6 +21,11 @@ const ALLOWED_ORIGINS = [...DEFAULT_ORIGINS, ...EXTRA_ORIGINS];
 
 const app = new Hono();
 
+app.use("*", async (c, next) => {
+  const start = Date.now();
+  await next();
+  console.log(`[relay-agent] ${c.req.method} ${c.req.path} ${c.res.status} ${Date.now() - start}ms`);
+});
 app.use("*", cors({ origin: ALLOWED_ORIGINS }));
 
 // Auth middleware: skip for /health
