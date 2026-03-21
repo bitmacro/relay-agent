@@ -11,7 +11,10 @@ export default defineConfig({
   clean: true,
   splitting: false,
   sourcemap: true,
+<<<<<<< HEAD
   noExternal: ["hono", "@hono/node-server"],
+=======
+>>>>>>> origin/fix/stats-strfry-v1
   banner: {
     js: "#!/usr/bin/env node",
   },
