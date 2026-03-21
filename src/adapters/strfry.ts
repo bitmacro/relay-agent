@@ -285,16 +285,28 @@ async function readWhitelist(): Promise<string[]> {
   return content.split("\n").map((l) => l.trim()).filter(Boolean);
 }
 
+const PUBKEY_HEX_REGEX = /^[0-9a-f]{64}$/;
+
 export type PolicyEntry = { pubkey: string; status: "allowed" | "blocked" };
+
+function isValidPubkey(s: string): boolean {
+  return PUBKEY_HEX_REGEX.test(s.toLowerCase());
+}
 
 export async function getPolicyEntries(): Promise<PolicyEntry[]> {
   const lines = await readWhitelist();
-  return lines.map((line) => {
+  const entries: PolicyEntry[] = [];
+  for (const line of lines) {
+    if (line.startsWith("#") || !line) continue;
     if (line.startsWith("!")) {
-      return { pubkey: line.slice(1), status: "blocked" as const };
+      const pubkey = line.slice(1).toLowerCase();
+      if (isValidPubkey(pubkey)) entries.push({ pubkey, status: "blocked" });
+      continue;
     }
-    return { pubkey: line, status: "allowed" as const };
-  });
+    const pubkey = line.toLowerCase();
+    if (isValidPubkey(pubkey)) entries.push({ pubkey, status: "allowed" });
+  }
+  return entries;
 }
 
 async function writeWhitelist(lines: string[]): Promise<void> {
