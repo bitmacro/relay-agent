@@ -143,7 +143,7 @@ Authorization: Bearer <your-token>
 | `STRFRY_CONFIG` | — | Path to strfry config file (for explicit db path) |
 | `WHITELIST_PATH` | `/etc/strfry/whitelist.txt` | Path to whitelist file |
 | `PORT` | `7800` | HTTP server port |
-| `ALLOWED_ORIGINS` | — | Comma-separated extra CORS origins (defaults include `https://relay-panel.bitmacro.io`, `http://localhost:3000`) |
+| `ALLOWED_ORIGINS` | — | Comma-separated extra CORS origins (defaults include `https://relay-panel.bitmacro.`, `https://relay-panel.bitmacro.pro`, `http://localhost:3000`) |
 
 ---
 
