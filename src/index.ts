@@ -21,6 +21,11 @@ const ALLOWED_ORIGINS = [...DEFAULT_ORIGINS, ...EXTRA_ORIGINS];
 
 const app = new Hono();
 
+app.use("*", async (c, next) => {
+  const start = Date.now();
+  await next();
+  console.log(`[relay-agent] ${c.req.method} ${c.req.path} ${c.res.status} ${Date.now() - start}ms`);
+});
 app.use("*", cors({ origin: ALLOWED_ORIGINS }));
 
 // Auth middleware: skip for /health
