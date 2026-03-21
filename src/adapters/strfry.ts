@@ -285,6 +285,18 @@ async function readWhitelist(): Promise<string[]> {
   return content.split("\n").map((l) => l.trim()).filter(Boolean);
 }
 
+export type PolicyEntry = { pubkey: string; status: "allowed" | "blocked" };
+
+export async function getPolicyEntries(): Promise<PolicyEntry[]> {
+  const lines = await readWhitelist();
+  return lines.map((line) => {
+    if (line.startsWith("!")) {
+      return { pubkey: line.slice(1), status: "blocked" as const };
+    }
+    return { pubkey: line, status: "allowed" as const };
+  });
+}
+
 async function writeWhitelist(lines: string[]): Promise<void> {
   const dir = dirname(WHITELIST_PATH);
   if (!existsSync(dir)) {
