@@ -147,10 +147,18 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
   try {
     const filterJson = buildFilterJson(filter);
     const cwd = getStrfryCwd();
+<<<<<<< HEAD
     const { stdout } = await spawnAsync(STRFRY_BIN, strfryArgs("scan", filterJson), {
       maxBuffer: 50 * 1024 * 1024,
       cwd: cwd || undefined,
     });
+=======
+    const { stdout } = await execFileAsync(
+      STRFRY_BIN,
+      ["scan", filterJson],
+      { maxBuffer: 50 * 1024 * 1024, cwd: cwd || undefined }
+    );
+>>>>>>> origin/chore/scan-events-debug-logging
     const events: NostrEvent[] = [];
     for (const line of stdout.trim().split("\n")) {
       if (!line) continue;
@@ -163,7 +171,11 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
     }
     return events;
   } catch (err) {
+<<<<<<< HEAD
     logStrfryError("scanEvents", err);
+=======
+    console.error("[strfry adapter] scanEvents error:", err);
+>>>>>>> origin/chore/scan-events-debug-logging
     throw err;
   }
 }
