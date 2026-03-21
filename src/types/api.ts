@@ -1,6 +1,6 @@
 /**
  * Public API types for relay-agent.
- * Consumed by admin.bitmacro.io and other clients.
+ * Consumed by relay-panel.bitmacro.cloud, relay-panel.bitmacro.pro and other clients.
  */
 
 /** Relay statistics (GET /stats) */

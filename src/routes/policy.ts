@@ -5,6 +5,15 @@ const PUBKEY_REGEX = /^[0-9a-f]{64}$/;
 
 export const policyRoutes = new Hono();
 
+policyRoutes.get("/policy", async (c) => {
+  try {
+    const entries = await strfry.getPolicyEntries();
+    return c.json({ entries });
+  } catch {
+    return c.json({ error: "relay unavailable" }, 503);
+  }
+});
+
 policyRoutes.post("/policy/block", async (c) => {
   try {
     const body = await c.req.json<{ pubkey: string }>();
