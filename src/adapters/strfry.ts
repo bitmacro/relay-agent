@@ -100,8 +100,34 @@ function spawnAsync(
 }
 
 const STRFRY_BIN = process.env.STRFRY_BIN ?? "strfry";
-const STRFRY_CONFIG = process.env.STRFRY_CONFIG;
-const WHITELIST_PATH = process.env.WHITELIST_PATH ?? "/etc/strfry/whitelist.txt";
+const DEFAULT_STRFRY_CONFIG = process.env.STRFRY_CONFIG;
+const DEFAULT_WHITELIST_PATH = process.env.WHITELIST_PATH ?? "/etc/strfry/whitelist.txt";
+
+/** Per-relay strfry config. When null, uses env vars (v0.1.x backward compat). */
+export interface StrfryConfig {
+  strfryConfig: string;
+  strfryDb: string;
+  whitelistPath?: string;
+}
+
+function resolveConfig(cfg: StrfryConfig | null): {
+  strfryConfig: string | undefined;
+  strfryDb: string;
+  whitelistPath: string;
+} {
+  if (cfg) {
+    return {
+      strfryConfig: cfg.strfryConfig || undefined,
+      strfryDb: cfg.strfryDb,
+      whitelistPath: cfg.whitelistPath ?? DEFAULT_WHITELIST_PATH,
+    };
+  }
+  return {
+    strfryConfig: DEFAULT_STRFRY_CONFIG,
+    strfryDb: process.env.STRFRY_DB_PATH ?? "./strfry-db",
+    whitelistPath: DEFAULT_WHITELIST_PATH,
+  };
+}
 
 function logStrfryError(operation: string, err: unknown): void {
   const msg = err instanceof Error ? err.message : String(err);
@@ -116,17 +142,12 @@ function logStrfryError(operation: string, err: unknown): void {
   console.error(parts.join("\n"));
 }
 
-function getStrfryDbPath(): string {
-  return process.env.STRFRY_DB_PATH ?? "./strfry-db";
-}
-
-function strfryArgs(subcommand: string, ...args: string[]): string[] {
-  const base = STRFRY_CONFIG ? ["--config", STRFRY_CONFIG, subcommand] : [subcommand];
+function strfryArgs(cfg: { strfryConfig?: string; strfryDb: string }, subcommand: string, ...args: string[]): string[] {
+  const base = cfg.strfryConfig ? ["--config", cfg.strfryConfig, subcommand] : [subcommand];
   return [...base, ...args];
 }
 
-function getStrfryCwd(): string | undefined {
-  const dbPath = getStrfryDbPath();
+function getStrfryCwd(dbPath: string): string | undefined {
   if (!dbPath) return undefined;
   const parent = dirname(dbPath);
   return parent !== "." ? parent : undefined;
@@ -143,11 +164,12 @@ function buildFilterJson(filter: NostrFilter): string {
   return JSON.stringify(obj);
 }
 
-export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
+export async function scanEvents(filter: NostrFilter, cfg: StrfryConfig | null = null): Promise<NostrEvent[]> {
+  const resolved = resolveConfig(cfg);
   try {
     const filterJson = buildFilterJson(filter);
-    const cwd = getStrfryCwd();
-    const { stdout } = await spawnAsync(STRFRY_BIN, strfryArgs("scan", filterJson), {
+    const cwd = getStrfryCwd(resolved.strfryDb);
+    const { stdout } = await spawnAsync(STRFRY_BIN, strfryArgs(resolved, "scan", filterJson), {
       maxBuffer: 50 * 1024 * 1024,
       cwd: cwd || undefined,
     });
@@ -168,11 +190,12 @@ export async function scanEvents(filter: NostrFilter): Promise<NostrEvent[]> {
   }
 }
 
-export async function deleteEvent(id: string): Promise<void> {
+export async function deleteEvent(id: string, cfg: StrfryConfig | null = null): Promise<void> {
+  const resolved = resolveConfig(cfg);
   try {
     const filterJson = JSON.stringify({ ids: [id] });
-    const cwd = getStrfryCwd();
-    await spawnAsync(STRFRY_BIN, strfryArgs("delete", "--filter", filterJson), {
+    const cwd = getStrfryCwd(resolved.strfryDb);
+    await spawnAsync(STRFRY_BIN, strfryArgs(resolved, "delete", "--filter", filterJson), {
       cwd: cwd || undefined,
     });
   } catch (err) {
@@ -181,11 +204,12 @@ export async function deleteEvent(id: string): Promise<void> {
   }
 }
 
-export async function deleteByPubkey(pubkey: string): Promise<void> {
+export async function deleteByPubkey(pubkey: string, cfg: StrfryConfig | null = null): Promise<void> {
+  const resolved = resolveConfig(cfg);
   try {
     const filterJson = JSON.stringify({ authors: [pubkey] });
-    const cwd = getStrfryCwd();
-    await spawnAsync(STRFRY_BIN, strfryArgs("delete", "--filter", filterJson), {
+    const cwd = getStrfryCwd(resolved.strfryDb);
+    await spawnAsync(STRFRY_BIN, strfryArgs(resolved, "delete", "--filter", filterJson), {
       cwd: cwd || undefined,
     });
   } catch (err) {
@@ -196,9 +220,10 @@ export async function deleteByPubkey(pubkey: string): Promise<void> {
 
 const SCAN_COUNT_TIMEOUT_MS = 60_000;
 
-function spawnScanCount(cwd: string | undefined): Promise<number> {
+function spawnScanCount(resolved: { strfryConfig?: string; strfryDb: string }): Promise<number> {
+  const cwd = getStrfryCwd(resolved.strfryDb);
   return new Promise((resolve) => {
-    const child = spawn(STRFRY_BIN, strfryArgs("scan", "{}"), {
+    const child = spawn(STRFRY_BIN, strfryArgs(resolved, "scan", "{}"), {
       stdio: ["ignore", "pipe", "pipe"],
       cwd: cwd || undefined,
     });
@@ -222,12 +247,13 @@ function spawnScanCount(cwd: string | undefined): Promise<number> {
   });
 }
 
-export async function getStats(): Promise<RelayStats> {
+export async function getStats(cfg: StrfryConfig | null = null): Promise<RelayStats> {
+  const resolved = resolveConfig(cfg);
   let total_events = 0;
   let strfry_version = "unknown";
 
-  const cwd = getStrfryCwd();
-  total_events = await spawnScanCount(cwd);
+  const cwd = getStrfryCwd(resolved.strfryDb);
+  total_events = await spawnScanCount(resolved);
 
   try {
     const { stdout } = await spawnAsync(STRFRY_BIN, ["--version"], {
@@ -241,7 +267,7 @@ export async function getStats(): Promise<RelayStats> {
 
   let db_size = "0";
   try {
-    const { stdout } = await spawnAsync("du", ["-sh", getStrfryDbPath()]);
+    const { stdout } = await spawnAsync("du", ["-sh", resolved.strfryDb]);
     db_size = stdout.trim().split(/\s+/)[0] ?? "0";
   } catch {
     db_size = "unknown";
@@ -267,9 +293,9 @@ export async function getStats(): Promise<RelayStats> {
   };
 }
 
-export async function listUsers(limit = 1000): Promise<string[]> {
+export async function listUsers(limit = 1000, cfg: StrfryConfig | null = null): Promise<string[]> {
   const filter: NostrFilter = { kinds: [0, 1, 3], limit };
-  const events = await scanEvents(filter);
+  const events = await scanEvents(filter, cfg);
   const pubkeys = new Set<string>();
   for (const e of events) {
     pubkeys.add(e.pubkey);
@@ -277,11 +303,11 @@ export async function listUsers(limit = 1000): Promise<string[]> {
   return Array.from(pubkeys);
 }
 
-async function readWhitelist(): Promise<string[]> {
-  if (!existsSync(WHITELIST_PATH)) {
+async function readWhitelist(whitelistPath: string): Promise<string[]> {
+  if (!existsSync(whitelistPath)) {
     return [];
   }
-  const content = await readFile(WHITELIST_PATH, "utf-8");
+  const content = await readFile(whitelistPath, "utf-8");
   return content.split("\n").map((l) => l.trim()).filter(Boolean);
 }
 
@@ -293,8 +319,9 @@ function isValidPubkey(s: string): boolean {
   return PUBKEY_HEX_REGEX.test(s.toLowerCase());
 }
 
-export async function getPolicyEntries(): Promise<PolicyEntry[]> {
-  const lines = await readWhitelist();
+export async function getPolicyEntries(cfg: StrfryConfig | null = null): Promise<PolicyEntry[]> {
+  const resolved = resolveConfig(cfg);
+  const lines = await readWhitelist(resolved.whitelistPath);
   const entries: PolicyEntry[] = [];
   for (const line of lines) {
     if (line.startsWith("#") || !line) continue;
@@ -309,16 +336,17 @@ export async function getPolicyEntries(): Promise<PolicyEntry[]> {
   return entries;
 }
 
-async function writeWhitelist(lines: string[]): Promise<void> {
-  const dir = dirname(WHITELIST_PATH);
+async function writeWhitelist(whitelistPath: string, lines: string[]): Promise<void> {
+  const dir = dirname(whitelistPath);
   if (!existsSync(dir)) {
     await mkdir(dir, { recursive: true });
   }
-  await writeFile(WHITELIST_PATH, lines.join("\n") + "\n", "utf-8");
+  await writeFile(whitelistPath, lines.join("\n") + "\n", "utf-8");
 }
 
-export async function blockPubkey(pubkey: string): Promise<void> {
-  const lines = await readWhitelist();
+export async function blockPubkey(pubkey: string, cfg: StrfryConfig | null = null): Promise<void> {
+  const resolved = resolveConfig(cfg);
+  const lines = await readWhitelist(resolved.whitelistPath);
   const blockLine = `!${pubkey}`;
   const withoutPubkey = lines.filter(
     (l) => l !== pubkey && l !== blockLine
@@ -326,16 +354,17 @@ export async function blockPubkey(pubkey: string): Promise<void> {
   if (!withoutPubkey.includes(blockLine)) {
     withoutPubkey.push(blockLine);
   }
-  await writeWhitelist(withoutPubkey);
-  await deleteByPubkey(pubkey);
+  await writeWhitelist(resolved.whitelistPath, withoutPubkey);
+  await deleteByPubkey(pubkey, cfg);
 }
 
-export async function allowPubkey(pubkey: string): Promise<void> {
-  const lines = await readWhitelist();
+export async function allowPubkey(pubkey: string, cfg: StrfryConfig | null = null): Promise<void> {
+  const resolved = resolveConfig(cfg);
+  const lines = await readWhitelist(resolved.whitelistPath);
   const blockLine = `!${pubkey}`;
   const filtered = lines.filter((l) => l !== blockLine);
   if (!filtered.includes(pubkey)) {
     filtered.push(pubkey);
   }
-  await writeWhitelist(filtered);
+  await writeWhitelist(resolved.whitelistPath, filtered);
 }

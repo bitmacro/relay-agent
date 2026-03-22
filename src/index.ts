@@ -2,15 +2,27 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import { authMiddleware } from "./middleware/auth.js";
-import { healthRoutes } from "./routes/health.js";
-import { eventsRoutes } from "./routes/events.js";
-import { statsRoutes } from "./routes/stats.js";
-import { policyRoutes } from "./routes/policy.js";
-import { usersRoutes } from "./routes/users.js";
+import { healthRoutes, healthMultiRoutes } from "./routes/health.js";
+import {
+  statsLegacyRoutes,
+  statsMultiRoutes,
+} from "./routes/stats.js";
+import {
+  eventsLegacyRoutes,
+  eventsMultiRoutes,
+} from "./routes/events.js";
+import {
+  policyLegacyRoutes,
+  policyMultiRoutes,
+} from "./routes/policy.js";
+import {
+  usersLegacyRoutes,
+  usersMultiRoutes,
+} from "./routes/users.js";
+import { isMultiRelayMode } from "./config/relay-instances.js";
 
 const DEFAULT_ORIGINS = [
-  "https://relay-panel.bitmacro.cloud",
-  "https://relay-panel.bitmacro.pro",
+  "https://relay-panel.bitmacro.io",
   "http://localhost:3000",
 ];
 const EXTRA_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
@@ -28,17 +40,23 @@ app.use("*", async (c, next) => {
 });
 app.use("*", cors({ origin: ALLOWED_ORIGINS }));
 
-// Auth middleware: skip for /health
-app.use("*", async (c, next) => {
-  if (c.req.path === "/health") return next();
-  return authMiddleware(c, next);
-});
+// Auth: skip /health and /:relayId/health; require Bearer for rest
+app.use("*", authMiddleware);
 
+// Health first (both modes)
 app.route("/", healthRoutes);
-app.route("/", eventsRoutes);
-app.route("/", statsRoutes);
-app.route("/", policyRoutes);
-app.route("/", usersRoutes);
+if (isMultiRelayMode()) {
+  app.route("/", healthMultiRoutes);
+  app.route("/", statsMultiRoutes);
+  app.route("/", eventsMultiRoutes);
+  app.route("/", policyMultiRoutes);
+  app.route("/", usersMultiRoutes);
+} else {
+  app.route("/", statsLegacyRoutes);
+  app.route("/", eventsLegacyRoutes);
+  app.route("/", policyLegacyRoutes);
+  app.route("/", usersLegacyRoutes);
+}
 
 export function createServer(port: number) {
   return serve({
