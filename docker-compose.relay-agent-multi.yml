@@ -1,0 +1,44 @@
+# ================================================================
+# BitMacro Relay Agent — Docker Compose fragment (v0.2 — 1 agent, N relays)
+#
+# Usage (from directory containing docker-compose.yml, e.g. /home/server/):
+#   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agent-multi.yml build relay-agent-multi
+#   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agent-multi.yml up -d relay-agent-multi
+#
+# Requires: relay_private, relay_public, relay_paid, network bitmacro in parent compose.
+# Prerequisites: nostr/{public,private,paid}/ must have strfry.conf, whitelist.txt, data/
+# Env vars (add to .env): RELAY_AGENT_TOKEN_PRIVATE, RELAY_AGENT_TOKEN_PUBLIC, RELAY_AGENT_TOKEN_PAID
+#
+# Port 7810 (distinct from v0.1 agents 7811, 7812, 7813). Routes: GET /public/stats, GET /private/policy, etc.
+# ================================================================
+
+services:
+  relay-agent-multi:
+    image: ghcr.io/bitmacro/relay-agent:latest
+    build:
+      context: ./relay-agent
+      dockerfile: Dockerfile
+    container_name: relay-agent-multi
+    restart: unless-stopped
+    networks:
+      - bitmacro
+    ports:
+      - "7810:7800"
+    volumes:
+      - ./nostr/public/data:/app/nostr/public/data
+      - ./nostr/public/strfry.conf:/app/nostr/public/strfry.conf
+      - ./nostr/public/whitelist.txt:/app/nostr/public/whitelist.txt
+      - ./nostr/private/data:/app/nostr/private/data
+      - ./nostr/private/strfry.conf:/app/nostr/private/strfry.conf
+      - ./nostr/private/whitelist.txt:/app/nostr/private/whitelist.txt
+      - ./nostr/paid/data:/app/nostr/paid/data
+      - ./nostr/paid/strfry.conf:/app/nostr/paid/strfry.conf
+      - ./nostr/paid/whitelist.txt:/app/nostr/paid/whitelist.txt
+    environment:
+      - RELAY_INSTANCES=[{"id":"public","token":"${RELAY_AGENT_TOKEN_PUBLIC:-change_me}","strfryConfig":"/app/nostr/public/strfry.conf","strfryDb":"/app/nostr/public/data","whitelistPath":"/app/nostr/public/whitelist.txt"},{"id":"private","token":"${RELAY_AGENT_TOKEN_PRIVATE:-change_me}","strfryConfig":"/app/nostr/private/strfry.conf","strfryDb":"/app/nostr/private/data","whitelistPath":"/app/nostr/private/whitelist.txt"},{"id":"paid","token":"${RELAY_AGENT_TOKEN_PAID:-change_me}","strfryConfig":"/app/nostr/paid/strfry.conf","strfryDb":"/app/nostr/paid/data","whitelistPath":"/app/nostr/paid/whitelist.txt"}]
+      - STRFRY_BIN=/app/strfry
+      - PORT=7800
+    depends_on:
+      - relay_private
+      - relay_public
+      - relay_paid
