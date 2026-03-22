@@ -41,77 +41,85 @@ docker run -p 7800:7800 \
 
 Or build locally: `docker build -t relay-agent .`
 
-**Multiple relays:** Use the compose fragment. Place relay-agent next to your docker-compose.yml.
+**Multiple relays (v0.2):** One agent, N relays via `RELAY_INSTANCES`. Use `docker-compose.relay-agent.yml` (fragment) or `docker-compose.yml` (standalone).
 
-### Server deployment (complete flow)
+### Server deployment (v0.2 multi-relay)
 
 ```bash
-# 1. Clone (or pull) relay-agent into a subdir next to your docker-compose.yml
+# 1. Clone relay-agent into a subdir next to your docker-compose.yml
 git clone https://github.com/bitmacro/relay-agent.git relay-agent
 
-# 2. Configure .env in the directory containing docker-compose.yml
-echo "RELAY_AGENT_TOKEN_PRIVATE=your-secret-token" >> .env
-echo "RELAY_AGENT_TOKEN_PUBLIC=your-secret-token" >> .env
-echo "RELAY_AGENT_TOKEN_PAID=your-secret-token" >> .env
+# 2. Configure .env (single token for all relays)
+echo "RELAY_AGENT_TOKEN=your-secret-token" >> .env
 
-# 3. Pull images from GHCR (or build locally if testing before merge)
-docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml pull
-
-# 4. Start the services
-docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d relay-agent-private relay-agent-public relay-agent-paid
+# 3. Build and start (requires relay_private, relay_public, relay_paid, network bitmacro in parent compose)
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agent.yml build relay-agent
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agent.yml up -d relay-agent
 ```
 
-**Before GHCR has the image:** Use `build` instead of `pull` — the compose includes a build fallback. Run `docker compose ... build` then `up -d`.
+Prerequisites: `nostr/{public,private,paid}/` must have `strfry.conf`, `whitelist.txt`, `data/`.
 
-See `docker-compose.relay-agents.yml` for the full setup (1 agent per relay in v0.1).
 
 ---
 
 ## Operational Commands
 
-For operators using the compose fragment (`docker-compose.yml` + `relay-agent/docker-compose.relay-agents.yml`):
+### v0.2 multi-relay
 
 ```bash
-# Rebuild and restart a specific agent
-docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d --build relay-agent-public
-
-# Rebuild and restart all relay agents
-docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d --build relay-agent-private relay-agent-public relay-agent-paid
-
-# Pull latest image and restart (when using GHCR)
-docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml pull
-docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml up -d relay-agent-private relay-agent-public relay-agent-paid
+# Build and start
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agent.yml up -d --build relay-agent
 
 # View logs
-docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml logs -f relay-agent-public
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agent.yml logs -f relay-agent
 
-# Stop all relay agents
-docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml stop relay-agent-private relay-agent-public relay-agent-paid
+# Stop
+docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agent.yml stop relay-agent
+```
+
+### Standalone (from relay-agent dir)
+
+```bash
+cd relay-agent && docker compose up -d
 ```
 
 ### Smoke Test
 
-Verify the agent can talk to strfry LMDB:
-
 ```bash
-docker exec relay-agent-public sh -c 'curl -s -m 60 -H "Authorization: Bearer $RELAY_AGENT_TOKEN" http://localhost:7800/stats'
-```
+# v0.2: health lists relay IDs
+curl http://localhost:7810/health
+# {"status":"ok","relayIds":["public","private","paid"],...}
 
-Expected response: `{"total_events":...,"db_size":"...","uptime":...,"version":"..."}`
+# v0.2: stats for a specific relay (replace TOKEN and relay id)
+curl -H "Authorization: Bearer TOKEN" http://localhost:7810/private/stats
+```
 
 ---
 
 ## REST API Endpoints
 
-| Method | Path | Description | Example Response |
-|--------|------|-------------|------------------|
-| `GET` | `/health` | Health check (no auth) | `{"status":"ok","timestamp":"..."}` |
-| `GET` | `/events` | List events (NIP-01 filter) | `[{id, pubkey, kind, ...}, ...]` |
-| `DELETE` | `/events/:id` | Delete event by id | `{"deleted":"<id>"}` |
-| `GET` | `/stats` | Relay statistics | `{total_events, db_size, uptime, version}` |
-| `POST` | `/policy/block` | Block pubkey | `{"blocked":"<pubkey>"}` |
-| `POST` | `/policy/allow` | Allow pubkey | `{"allowed":"<pubkey>"}` |
-| `GET` | `/users` | List unique pubkeys | `{"users":["<pubkey>", ...]}` |
+### v0.2 multi-relay (RELAY_INSTANCES set)
+
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| `GET` | `/health` | List active relay IDs | no |
+| `GET` | `/:relayId/health` | Health for relay | no |
+| `GET` | `/:relayId/stats` | Relay statistics | Bearer |
+| `GET` | `/:relayId/events` | List events | Bearer |
+| `DELETE` | `/:relayId/events/:id` | Delete event | Bearer |
+| `GET` | `/:relayId/policy` | Policy entries | Bearer |
+| `POST` | `/:relayId/policy/block` | Block pubkey | Bearer |
+| `POST` | `/:relayId/policy/allow` | Allow pubkey | Bearer |
+| `GET` | `/:relayId/users` | List pubkeys | Bearer |
+
+`relayId` = logical ID from RELAY_INSTANCES (e.g. `public`, `private`, `paid`). Must match `agent_relay_id` in relay_configs.
+
+### v0.1 single-relay (no RELAY_INSTANCES)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Health check |
+| `GET` | `/stats`, `/events`, `/policy`, `/users` | Same as above, no prefix |
 
 ### Query parameters for `GET /events`
 
@@ -135,15 +143,27 @@ Authorization: Bearer <your-token>
 
 ## Environment Variables
 
+### v0.2 multi-relay
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RELAY_INSTANCES` | — | JSON array of `{id, token, strfryConfig, strfryDb, whitelistPath?}` |
+| `RELAY_AGENT_TOKEN` | — | Not used when RELAY_INSTANCES is set |
+| `STRFRY_BIN` | `strfry` | Path to strfry binary |
+| `PORT` | `7800` | HTTP server port |
+| `ALLOWED_ORIGINS` | — | Comma-separated extra CORS origins |
+
+### v0.1 single-relay
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `RELAY_AGENT_TOKEN` | — | **Required.** Bearer token for API auth |
 | `STRFRY_BIN` | `strfry` | Path to strfry binary |
 | `STRFRY_DB_PATH` | `./strfry-db` | Path to strfry database directory |
-| `STRFRY_CONFIG` | — | Path to strfry config file (for explicit db path) |
+| `STRFRY_CONFIG` | — | Path to strfry config file |
 | `WHITELIST_PATH` | `/etc/strfry/whitelist.txt` | Path to whitelist file |
 | `PORT` | `7800` | HTTP server port |
-| `ALLOWED_ORIGINS` | — | Comma-separated extra CORS origins (defaults include `relay-panel.bitmacro.cloud`, `relay-panel.bitmacro.pro`, `http://localhost:3000`) |
+| `ALLOWED_ORIGINS` | — | Comma-separated extra CORS origins |
 
 ---
 
@@ -152,6 +172,7 @@ Authorization: Bearer <your-token>
 | relay-agent | strfry |
 |-------------|--------|
 | 0.1.x | 1.0.x |
+| 0.2.x | 1.0.x |
 
 ---
 
@@ -180,10 +201,9 @@ The relay-agent is **stateless** — it has no database. State lives in Supabase
 
 1. **Capture the error** — run logs in one terminal, then curl in another:
    ```bash
-   # Terminal 1
-   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml logs -f relay-agent-private
-   # Terminal 2
-   curl -H "Authorization: Bearer TOKEN" "http://localhost:7811/events?limit=3"
+   # v0.2
+   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agent.yml logs -f relay-agent
+   curl -H "Authorization: Bearer TOKEN" "http://localhost:7810/private/events?limit=3"
    ```
    The strfry stderr will appear in the logs.
 
@@ -200,9 +220,9 @@ The relay-agent is **stateless** — it has no database. State lives in Supabase
    grep -A5 relay_private docker-compose.yml
    ```
 
-4. **Test strfry inside container**:
+4. **Test strfry inside container** (v0.2):
    ```bash
-   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agents.yml run --rm relay-agent-private sh -c 'ls -la /app/strfry-db && /app/strfry --config /app/strfry.conf scan "{}" | head -3'
+   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agent.yml run --rm relay-agent sh -c 'ls -la /app/nostr/private/data && /app/strfry --config /app/nostr/private/strfry.conf scan "{}" | head -3'
    ```
    If `data.mdb` is missing or strfry fails, fix the volume path.
 
