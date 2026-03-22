@@ -215,7 +215,7 @@ The relay-agent is **stateless** — it has no database. State lives in Supabase
    ```
    Then restart the relay: `docker restart relay_private`
 
-3. **Verify db path** — relay-agent mounts `./nostr/private/data:/app/strfry-db`. Your relay (`relay_private`) must use the **same** host path for its strfry db. Check your main `docker-compose.yml`:
+3. **Verify db path** — relay-agent mounts `./nostr/private/data:/app/nostr/private/data`. Your relay (`relay_private`) must use the **same** host path for its strfry db. Check your main `docker-compose.yml`:
    ```bash
    grep -A5 relay_private docker-compose.yml
    ```

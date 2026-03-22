@@ -164,58 +164,74 @@ function buildFilterJson(filter: NostrFilter): string {
   return JSON.stringify(obj);
 }
 
+/** Per-db mutex to avoid concurrent strfry (LMDB) access on the same relay. */
+const strfryLocks = new Map<string, Promise<void>>();
+
+async function withStrfryMutex<T>(strfryDb: string, fn: () => Promise<T>): Promise<T> {
+  const prev = strfryLocks.get(strfryDb) ?? Promise.resolve();
+  const work = prev.then(() => fn());
+  strfryLocks.set(strfryDb, work.finally(() => {}));
+  return work;
+}
+
 export async function scanEvents(filter: NostrFilter, cfg: StrfryConfig | null = null): Promise<NostrEvent[]> {
   const resolved = resolveConfig(cfg);
-  try {
-    const filterJson = buildFilterJson(filter);
-    const cwd = getStrfryCwd(resolved.strfryDb);
-    const { stdout } = await spawnAsync(STRFRY_BIN, strfryArgs(resolved, "scan", filterJson), {
-      maxBuffer: 50 * 1024 * 1024,
-      cwd: cwd || undefined,
-    });
-    const events: NostrEvent[] = [];
-    for (const line of stdout.trim().split("\n")) {
-      if (!line) continue;
-      try {
-        const event = JSON.parse(line) as NostrEvent;
-        events.push(event);
-      } catch {
-        // skip malformed lines
+  return withStrfryMutex(resolved.strfryDb, async () => {
+    try {
+      const filterJson = buildFilterJson(filter);
+      const cwd = getStrfryCwd(resolved.strfryDb);
+      const { stdout } = await spawnAsync(STRFRY_BIN, strfryArgs(resolved, "scan", filterJson), {
+        maxBuffer: 50 * 1024 * 1024,
+        cwd: cwd || undefined,
+      });
+      const events: NostrEvent[] = [];
+      for (const line of stdout.trim().split("\n")) {
+        if (!line) continue;
+        try {
+          const event = JSON.parse(line) as NostrEvent;
+          events.push(event);
+        } catch {
+          // skip malformed lines
+        }
       }
+      return events;
+    } catch (err) {
+      logStrfryError("scanEvents", err);
+      throw err;
     }
-    return events;
-  } catch (err) {
-    logStrfryError("scanEvents", err);
-    throw err;
-  }
+  });
 }
 
 export async function deleteEvent(id: string, cfg: StrfryConfig | null = null): Promise<void> {
   const resolved = resolveConfig(cfg);
-  try {
-    const filterJson = JSON.stringify({ ids: [id] });
-    const cwd = getStrfryCwd(resolved.strfryDb);
-    await spawnAsync(STRFRY_BIN, strfryArgs(resolved, "delete", "--filter", filterJson), {
-      cwd: cwd || undefined,
-    });
-  } catch (err) {
-    logStrfryError("deleteEvent", err);
-    throw err;
-  }
+  return withStrfryMutex(resolved.strfryDb, async () => {
+    try {
+      const filterJson = JSON.stringify({ ids: [id] });
+      const cwd = getStrfryCwd(resolved.strfryDb);
+      await spawnAsync(STRFRY_BIN, strfryArgs(resolved, "delete", "--filter", filterJson), {
+        cwd: cwd || undefined,
+      });
+    } catch (err) {
+      logStrfryError("deleteEvent", err);
+      throw err;
+    }
+  });
 }
 
 export async function deleteByPubkey(pubkey: string, cfg: StrfryConfig | null = null): Promise<void> {
   const resolved = resolveConfig(cfg);
-  try {
-    const filterJson = JSON.stringify({ authors: [pubkey] });
-    const cwd = getStrfryCwd(resolved.strfryDb);
-    await spawnAsync(STRFRY_BIN, strfryArgs(resolved, "delete", "--filter", filterJson), {
-      cwd: cwd || undefined,
-    });
-  } catch (err) {
-    logStrfryError("deleteByPubkey", err);
-    throw err;
-  }
+  return withStrfryMutex(resolved.strfryDb, async () => {
+    try {
+      const filterJson = JSON.stringify({ authors: [pubkey] });
+      const cwd = getStrfryCwd(resolved.strfryDb);
+      await spawnAsync(STRFRY_BIN, strfryArgs(resolved, "delete", "--filter", filterJson), {
+        cwd: cwd || undefined,
+      });
+    } catch (err) {
+      logStrfryError("deleteByPubkey", err);
+      throw err;
+    }
+  });
 }
 
 const SCAN_COUNT_TIMEOUT_MS = 60_000;
@@ -249,6 +265,7 @@ function spawnScanCount(resolved: { strfryConfig?: string; strfryDb: string }): 
 
 export async function getStats(cfg: StrfryConfig | null = null): Promise<RelayStats> {
   const resolved = resolveConfig(cfg);
+  return withStrfryMutex(resolved.strfryDb, async () => {
   let total_events = 0;
   let strfry_version = "unknown";
 
@@ -291,6 +308,7 @@ export async function getStats(cfg: StrfryConfig | null = null): Promise<RelaySt
     uptime_seconds,
     strfry_version,
   };
+  });
 }
 
 export async function listUsers(limit = 1000, cfg: StrfryConfig | null = null): Promise<string[]> {
