@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-22
+
+### Added
+
+- **Multi-relay (v0.2)** — one agent, N relays via `RELAY_INSTANCES` env
+- Routes `/:relayId/stats`, `/:relayId/events`, `/:relayId/policy`, etc. with per-relay config
+- `docker-compose.relay-agent.yml` fragment for v0.2 deployment
+- Per-relay strfry mutex — serializes LMDB access per db to reduce 503 "Resource temporarily unavailable"
+
+### Changed
+
+- `RELAY_INSTANCES` JSON array replaces single-relay env vars when set
+- Backward compatible: without `RELAY_INSTANCES`, behaves as v0.1 (single-relay)
+
 ## [0.1.5] - 2026-03-21
 
 - Version bump 0.1.5

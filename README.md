@@ -169,10 +169,10 @@ Authorization: Bearer <your-token>
 
 ## Compatibility
 
-| relay-agent | strfry |
-|-------------|--------|
-| 0.1.x | 1.0.x |
-| 0.2.x | 1.0.x |
+| relay-agent | strfry | Mode |
+|-------------|--------|------|
+| 0.1.x | 1.0.x | Single-relay |
+| 0.2.x | 1.0.x | Multi-relay (RELAY_INSTANCES) |
 
 ---
 
