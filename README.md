@@ -86,9 +86,9 @@ cd relay-agent && docker compose up -d
 ### Smoke Test
 
 ```bash
-# v0.2: health lists relay IDs
+# v0.2: health lists relay IDs and version
 curl http://localhost:7810/health
-# {"status":"ok","relayIds":["public","private","paid"],...}
+# {"status":"ok","version":"0.2.0","relayIds":["public","private","paid"],...}
 
 # v0.2: stats for a specific relay (replace TOKEN and relay id)
 curl -H "Authorization: Bearer TOKEN" http://localhost:7810/private/stats
@@ -172,7 +172,7 @@ Authorization: Bearer <your-token>
 | relay-agent | strfry | Mode |
 |-------------|--------|------|
 | 0.1.x | 1.0.x | Single-relay |
-| 0.2.0-beta.1 | 1.0.x | Multi-relay (RELAY_INSTANCES) — beta |
+| 0.2.x | 1.0.x | Multi-relay (RELAY_INSTANCES) |
 
 ---
 
