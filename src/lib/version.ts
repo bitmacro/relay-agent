@@ -2,20 +2,21 @@ import { readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
+const CANDIDATE_PATHS = [
+  "/app/package.json", // Docker
+  join(process.cwd(), "package.json"),
+  join(dirname(fileURLToPath(import.meta.url)), "../package.json"),
+  join(dirname(fileURLToPath(import.meta.url)), "../../package.json"),
+];
+
 export function getVersion(): string {
-  try {
-    const dir = dirname(fileURLToPath(import.meta.url));
-    for (const rel of ["../../package.json", "../package.json"]) {
-      try {
-        const p = join(dir, rel);
-        const pkg = JSON.parse(readFileSync(p, "utf-8"));
-        return pkg.version ?? "0.0.0";
-      } catch {
-        /* try next */
-      }
+  for (const p of CANDIDATE_PATHS) {
+    try {
+      const pkg = JSON.parse(readFileSync(p, "utf-8"));
+      return pkg.version ?? "0.0.0";
+    } catch {
+      /* try next */
     }
-  } catch {
-    /* ignore */
   }
   return "0.0.0";
 }
