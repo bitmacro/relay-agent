@@ -4,6 +4,8 @@
   "description": "REST API agent for managing Nostr relays without touching the terminal",
   "license": "MIT",
   "author": "BitMacro <contact@bitmacro.io>",
+  "homepage": "https://relay-panel.bitmacro.io",
+  "keywords": ["nostr", "relay", "strfry", "nostr-relay", "relay-manager", "bitcoin", "lightning", "nostr-relay-manager"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bitmacro/relay-agent.git"

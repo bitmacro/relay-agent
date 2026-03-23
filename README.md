@@ -4,6 +4,9 @@
 [![npm version](https://img.shields.io/npm/v/@bitmacro/relay-agent.svg)](https://www.npmjs.com/package/@bitmacro/relay-agent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+**[→ Web UI: relay-panel.bitmacro.io](https://relay-panel.bitmacro.io)**  
+**[→ BitMacro Ecosystem: bitmacro.io](https://bitmacro.io)**
+
 **Manage your Nostr relay without touching the terminal.**
 
 `relay-agent` is a REST API agent that runs on your relay server and translates HTTP requests into strfry CLI commands. It is part of the [BitMacro Relay Manager](https://bitmacro.io) ecosystem.
