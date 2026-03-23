@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0-beta.2] - 2026-03-23
+
+### Fixed
+
+- Mount strfry data at `/app/nostr/*/strfry-db` — `strfry.conf` uses `db="./strfry-db/"`, so relay-agent must mount host data there. Fixes `mdb_env_open: No such file or directory` on `/events` and stats.
+
+### Changed
+
+- Docker compose volumes: `./nostr/*/data` → `/app/nostr/*/strfry-db` (was `/app/nostr/*/data`)
+- `RELAY_INSTANCES` strfryDb paths updated to `strfry-db`
+- Docker publish workflow: trigger on pre-release tags (`v*.*.*-*`)
+
 ## [0.2.0-beta.1] - 2026-03-22
 
 ### Added
