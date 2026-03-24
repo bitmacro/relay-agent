@@ -40,6 +40,12 @@ services:
       - RELAY_INSTANCES=[{"id":"public","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/public/strfry.conf","strfryDb":"/app/nostr/public/strfry-db","whitelistPath":"/app/nostr/public/whitelist.txt"},{"id":"private","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/private/strfry.conf","strfryDb":"/app/nostr/private/strfry-db","whitelistPath":"/app/nostr/private/whitelist.txt"},{"id":"paid","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/paid/strfry.conf","strfryDb":"/app/nostr/paid/strfry-db","whitelistPath":"/app/nostr/paid/whitelist.txt"}]
       - STRFRY_BIN=/app/strfry
       - PORT=7800
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:7800/health > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 25s
     depends_on:
       - relay_private
       - relay_public
