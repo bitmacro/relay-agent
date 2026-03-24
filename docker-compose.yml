@@ -4,6 +4,9 @@
 #
 # Prerequisites: nostr/{public,private,paid}/ with strfry.conf, whitelist.txt, data/
 # Env: RELAY_AGENT_TOKEN
+#
+# `build` + `image: ...:latest` — local build overwrites a freshly pulled `latest`.
+# Use `pull` + `up` without `build` to run GHCR; or `git pull` + `build --no-cache` for source builds.
 # ================================================================
 
 services:
@@ -17,17 +20,23 @@ services:
     ports:
       - "7810:7800"
     volumes:
-      # strfry.conf uses db="./strfry-db/" — mount data there for strfry scan/delete
-      - ./nostr/public/data:/app/nostr/public/strfry-db
+      # strfry.conf in production usually has db="./data/" — mount host data/ to .../data
+      - ./nostr/public/data:/app/nostr/public/data
       - ./nostr/public/strfry.conf:/app/nostr/public/strfry.conf
       - ./nostr/public/whitelist.txt:/app/nostr/public/whitelist.txt
-      - ./nostr/private/data:/app/nostr/private/strfry-db
+      - ./nostr/private/data:/app/nostr/private/data
       - ./nostr/private/strfry.conf:/app/nostr/private/strfry.conf
       - ./nostr/private/whitelist.txt:/app/nostr/private/whitelist.txt
-      - ./nostr/paid/data:/app/nostr/paid/strfry-db
+      - ./nostr/paid/data:/app/nostr/paid/data
       - ./nostr/paid/strfry.conf:/app/nostr/paid/strfry.conf
       - ./nostr/paid/whitelist.txt:/app/nostr/paid/whitelist.txt
     environment:
-      - RELAY_INSTANCES=[{"id":"public","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/public/strfry.conf","strfryDb":"/app/nostr/public/strfry-db","whitelistPath":"/app/nostr/public/whitelist.txt"},{"id":"private","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/private/strfry.conf","strfryDb":"/app/nostr/private/strfry-db","whitelistPath":"/app/nostr/private/whitelist.txt"},{"id":"paid","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/paid/strfry.conf","strfryDb":"/app/nostr/paid/strfry-db","whitelistPath":"/app/nostr/paid/whitelist.txt"}]
+      - RELAY_INSTANCES=[{"id":"public","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/public/strfry.conf","strfryDb":"/app/nostr/public/data","whitelistPath":"/app/nostr/public/whitelist.txt"},{"id":"private","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/private/strfry.conf","strfryDb":"/app/nostr/private/data","whitelistPath":"/app/nostr/private/whitelist.txt"},{"id":"paid","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/paid/strfry.conf","strfryDb":"/app/nostr/paid/data","whitelistPath":"/app/nostr/paid/whitelist.txt"}]
       - STRFRY_BIN=/app/strfry
       - PORT=7800
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:7800/health > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 25s

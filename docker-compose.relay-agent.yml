@@ -8,9 +8,15 @@
 #
 # Requires: relay_private, relay_public, relay_paid, network bitmacro in parent compose.
 # Prerequisites: nostr/{public,private,paid}/ must have strfry.conf, whitelist.txt, data/
+# LMDB: mount host .../data to container .../data so strfry.conf db="./data/" matches relay_* containers.
 # Env vars (add to .env): RELAY_AGENT_TOKEN (single token for all relays)
 #
 # Port 7810. Routes: GET /public/stats, GET /private/policy, etc.
+#
+# If both `image` and `build` are set, `docker compose build` tags the local image as
+# `image`, overwriting what `docker compose pull` fetched. For GHCR-only deploys use
+# `pull` + `up` without `build`; when rebuilding from git use `git pull` then
+# `docker compose build --no-cache`.
 # ================================================================
 
 services:
@@ -40,6 +46,12 @@ services:
       - RELAY_INSTANCES=[{"id":"public","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/public/strfry.conf","strfryDb":"/app/nostr/public/strfry-db","whitelistPath":"/app/nostr/public/whitelist.txt"},{"id":"private","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/private/strfry.conf","strfryDb":"/app/nostr/private/strfry-db","whitelistPath":"/app/nostr/private/whitelist.txt"},{"id":"paid","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/paid/strfry.conf","strfryDb":"/app/nostr/paid/strfry-db","whitelistPath":"/app/nostr/paid/whitelist.txt"}]
       - STRFRY_BIN=/app/strfry
       - PORT=7800
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:7800/health > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 25s
     depends_on:
       - relay_private
       - relay_public

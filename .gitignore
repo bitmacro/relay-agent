@@ -4,6 +4,7 @@ dist/
 *.db
 strfry-db/
 .DS_Store
+.claude/
 *.log
 coverage/
 .vitest/

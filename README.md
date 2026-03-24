@@ -91,7 +91,8 @@ cd relay-agent && docker compose up -d
 ```bash
 # v0.2: health lists relay IDs and version
 curl http://localhost:7810/health
-# {"status":"ok","version":"0.2.0","relayIds":["public","private","paid"],...}
+# {"status":"ok","version":"0.2.3","relayIds":["public","private","paid"],...}
+# Per-relay: GET /:relayId/health includes the same package version field.
 
 # v0.2: stats for a specific relay (replace TOKEN and relay id)
 curl -H "Authorization: Bearer TOKEN" http://localhost:7810/private/stats
@@ -218,14 +219,14 @@ The relay-agent is **stateless** — it has no database. State lives in Supabase
    ```
    Then restart the relay: `docker restart relay_private`
 
-3. **Verify db path** — relay-agent mounts `./nostr/private/data:/app/nostr/private/strfry-db` (strfry.conf uses `db="./strfry-db/"`). Your relay (`relay_private`) must use the **same** host path. Check your main `docker-compose.yml`:
+3. **Verify db path** — relay-agent mounts `./nostr/private/data:/app/nostr/private/data` so it matches production `strfry.conf` with `db="./data/"` (same layout as `relay_private`). If you see `mdb_env_open: No such file or directory`, the mount path or `db=` in `strfry.conf` does not match. Check your main `docker-compose.yml`:
    ```bash
    grep -A5 relay_private docker-compose.yml
    ```
 
 4. **Test strfry inside container** (v0.2):
    ```bash
-   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agent.yml run --rm relay-agent sh -c 'ls -la /app/nostr/private/strfry-db && /app/strfry --config /app/nostr/private/strfry.conf scan "{}" | head -3'
+   docker compose -f docker-compose.yml -f relay-agent/docker-compose.relay-agent.yml run --rm relay-agent sh -c 'ls -la /app/nostr/private/data && /app/strfry --config /app/nostr/private/strfry.conf scan "{}" | head -3'
    ```
    If `data.mdb` is missing or strfry fails, fix the volume path.
 
