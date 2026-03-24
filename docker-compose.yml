@@ -4,6 +4,9 @@
 #
 # Prerequisites: nostr/{public,private,paid}/ with strfry.conf, whitelist.txt, data/
 # Env: RELAY_AGENT_TOKEN
+#
+# `build` + `image: ...:latest` — local build overwrites a freshly pulled `latest`.
+# Use `pull` + `up` without `build` to run GHCR; or `git pull` + `build --no-cache` for source builds.
 # ================================================================
 
 services:
