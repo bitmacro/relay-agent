@@ -8,6 +8,7 @@
 #
 # Requires: relay_private, relay_public, relay_paid, network bitmacro in parent compose.
 # Prerequisites: nostr/{public,private,paid}/ must have strfry.conf, whitelist.txt, data/
+# LMDB: mount host .../data to container .../data so strfry.conf db="./data/" matches relay_* containers.
 # Env vars (add to .env): RELAY_AGENT_TOKEN (single token for all relays)
 #
 # Port 7810. Routes: GET /public/stats, GET /private/policy, etc.
@@ -26,18 +27,17 @@ services:
     ports:
       - "7810:7800"
     volumes:
-      # strfry.conf uses db="./strfry-db/" — mount data there for strfry scan/delete
-      - ./nostr/public/data:/app/nostr/public/strfry-db
+      - ./nostr/public/data:/app/nostr/public/data
       - ./nostr/public/strfry.conf:/app/nostr/public/strfry.conf
       - ./nostr/public/whitelist.txt:/app/nostr/public/whitelist.txt
-      - ./nostr/private/data:/app/nostr/private/strfry-db
+      - ./nostr/private/data:/app/nostr/private/data
       - ./nostr/private/strfry.conf:/app/nostr/private/strfry.conf
       - ./nostr/private/whitelist.txt:/app/nostr/private/whitelist.txt
-      - ./nostr/paid/data:/app/nostr/paid/strfry-db
+      - ./nostr/paid/data:/app/nostr/paid/data
       - ./nostr/paid/strfry.conf:/app/nostr/paid/strfry.conf
       - ./nostr/paid/whitelist.txt:/app/nostr/paid/whitelist.txt
     environment:
-      - RELAY_INSTANCES=[{"id":"public","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/public/strfry.conf","strfryDb":"/app/nostr/public/strfry-db","whitelistPath":"/app/nostr/public/whitelist.txt"},{"id":"private","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/private/strfry.conf","strfryDb":"/app/nostr/private/strfry-db","whitelistPath":"/app/nostr/private/whitelist.txt"},{"id":"paid","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/paid/strfry.conf","strfryDb":"/app/nostr/paid/strfry-db","whitelistPath":"/app/nostr/paid/whitelist.txt"}]
+      - RELAY_INSTANCES=[{"id":"public","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/public/strfry.conf","strfryDb":"/app/nostr/public/data","whitelistPath":"/app/nostr/public/whitelist.txt"},{"id":"private","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/private/strfry.conf","strfryDb":"/app/nostr/private/data","whitelistPath":"/app/nostr/private/whitelist.txt"},{"id":"paid","token":"${RELAY_AGENT_TOKEN:-change_me}","strfryConfig":"/app/nostr/paid/strfry.conf","strfryDb":"/app/nostr/paid/data","whitelistPath":"/app/nostr/paid/whitelist.txt"}]
       - STRFRY_BIN=/app/strfry
       - PORT=7800
     healthcheck:

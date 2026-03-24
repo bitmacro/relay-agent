@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-03-24
+
+### Fixed
+
+- **Docker (multi-relay):** mount host `nostr/*/data` to `/app/nostr/*/data` and set `RELAY_INSTANCES.strfryDb` to `/app/nostr/*/data`. Production `strfry.conf` next to relay containers typically uses `db="./data/"`; mounting at `strfry-db` made strfry look for `./data` and fail with `mdb_env_open: No such file or directory`.
+- **Dockerfile:** `HEALTHCHECK` on `http://127.0.0.1:7800/health` (overrides strfry base image check on port 7777).
+
 ## [0.2.0-beta.2] - 2026-03-23
 
 ### Fixed
