@@ -27,5 +27,10 @@ healthMultiRoutes.get("/:relayId/health", (c) => {
   if (!instances?.some((i) => i.id === relayId)) {
     return c.json({ error: "relay not found", relayId }, 404);
   }
-  return c.json({ status: "ok", relayId, timestamp: new Date().toISOString() });
+  return c.json({
+    status: "ok",
+    relayId,
+    version: getVersion(),
+    timestamp: new Date().toISOString(),
+  });
 });
