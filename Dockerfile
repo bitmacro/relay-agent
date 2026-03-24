@@ -25,5 +25,9 @@ ENV STRFRY_BIN=/app/strfry
 ENV PORT=7800
 EXPOSE 7800
 
+# Override strfry base image healthcheck (localhost:7777) — Node listens on PORT
+HEALTHCHECK --interval=30s --timeout=10s --start-period=25s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:7800/health > /dev/null || exit 1
+
 ENTRYPOINT []
 CMD ["node", "dist/bin/relay-agent.mjs"]
