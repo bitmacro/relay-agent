@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-03-24
+
+### Fixed
+
+- **`GET /:relayId/health`** includes `version` in multi-relay mode — relay-api and relay-panel call this path per relay; without it, `version` was only on `GET /health`.
+
+### Changed
+
+- **`getVersion()`** — optional `RELAY_AGENT_VERSION` env override; only accepts `package.json` when `name` is `@bitmacro/relay-agent`.
+- **CLI** (`-v` / `--version`) uses the shared `getVersion()` implementation.
+
+### Documentation
+
+- **docker-compose** — comment that `build` + `image: ...:latest` overwrites a freshly pulled image; use `pull` + `up` without `build` for GHCR-only deploys.
+
 ## [0.2.2] - 2026-03-24
 
 ### Fixed

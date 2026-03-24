@@ -12,6 +12,11 @@
 # Env vars (add to .env): RELAY_AGENT_TOKEN (single token for all relays)
 #
 # Port 7810. Routes: GET /public/stats, GET /private/policy, etc.
+#
+# If both `image` and `build` are set, `docker compose build` tags the local image as
+# `image`, overwriting what `docker compose pull` fetched. For GHCR-only deploys use
+# `pull` + `up` without `build`; when rebuilding from git use `git pull` then
+# `docker compose build --no-cache`.
 # ================================================================
 
 services:
