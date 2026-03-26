@@ -2,7 +2,14 @@
 
 [![CI](https://github.com/bitmacro/relay-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/bitmacro/relay-agent/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@bitmacro/relay-agent.svg)](https://www.npmjs.com/package/@bitmacro/relay-agent)
+[![Docker GHCR](https://img.shields.io/badge/ghcr.io-bitmacro%2Frelay-agent-2496ED?logo=docker)](https://github.com/bitmacro/relay-agent/pkgs/container/relay-agent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178c6?logo=typescript)](https://www.typescriptlang.org/)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
+[![Hono](https://img.shields.io/badge/Hono-4-E36002?logo=hono)](https://hono.dev/)
+[![Vitest](https://img.shields.io/badge/test-Vitest-6E9F18?logo=vitest)](https://vitest.dev/)
+[![tsup](https://img.shields.io/badge/build-tsup-EFC942)](https://github.com/egoist/tsup)
+[![strfry](https://img.shields.io/badge/runtime-strfry%20CLI-394AAB)](https://hub.docker.com/r/dockurr/strfry)
 
 **[→ Web UI: relay-panel.bitmacro.io](https://relay-panel.bitmacro.io)**  
 **[→ BitMacro Ecosystem: bitmacro.io](https://bitmacro.io)**
@@ -14,8 +21,10 @@
 | Project | Description | License |
 |---------|-------------|---------|
 | **relay-agent** | This repo — REST API for strfry | MIT |
+| [@bitmacro/relay-connect](https://github.com/bitmacro/relay-connect) | BitMacro Connect SDK (NIP-46 / NIP-07) | MIT |
+| [relay-connect-web](https://github.com/bitmacro/relay-connect-web) | Connect UI + `/signer` proxy (Next.js) | MIT |
 | [relay-api](https://github.com/bitmacro/relay-api) | Central hub (Supabase, proxy) | Private |
-| [relay-panel](https://github.com/bitmacro/relay-panel) | Frontend | BSL 1.1 |
+| [relay-panel](https://github.com/bitmacro/relay-panel) | Relay management UI | BSL 1.1 |
 
 ---
 
