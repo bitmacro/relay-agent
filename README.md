@@ -121,8 +121,11 @@ curl -H "Authorization: Bearer TOKEN" http://localhost:7810/private/stats
 | `GET` | `/:relayId/events` | List events | Bearer |
 | `DELETE` | `/:relayId/events/:id` | Delete event | Bearer |
 | `GET` | `/:relayId/policy` | Policy entries | Bearer |
+| `GET` | `/:relayId/policy/blocked` | List blocked pubkeys (`!` lines in whitelist) | Bearer |
 | `POST` | `/:relayId/policy/block` | Block pubkey | Bearer |
 | `POST` | `/:relayId/policy/allow` | Allow pubkey | Bearer |
+| `DELETE` | `/:relayId/policy/allow/:pubkey` | Remove pubkey from allow list (plain line) | Bearer |
+| `DELETE` | `/:relayId/policy/block/:pubkey` | Remove `!pubkey` block line | Bearer |
 | `GET` | `/:relayId/users` | List pubkeys | Bearer |
 
 `relayId` = logical ID from RELAY_INSTANCES (e.g. `public`, `private`, `paid`). Must match `agent_relay_id` in relay_configs.
@@ -132,7 +135,8 @@ curl -H "Authorization: Bearer TOKEN" http://localhost:7810/private/stats
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/health` | Health check |
-| `GET` | `/stats`, `/events`, `/policy`, `/users` | Same as above, no prefix |
+| `GET` | `/stats`, `/events`, `/policy`, `/policy/blocked`, `/users` | Same as above, no prefix |
+| `DELETE` | `/policy/allow/:pubkey`, `/policy/block/:pubkey` | Remove allow / block line (same whitelist file) |
 
 ### Query parameters for `GET /events`
 
@@ -151,6 +155,27 @@ All endpoints except `/health` require:
 ```
 Authorization: Bearer <your-token>
 ```
+
+---
+
+## API Roadmap
+
+### Alta prioridade (esta PR)
+
+- [x] `DELETE /:relayId/policy/allow/:pubkey`
+- [x] `DELETE /:relayId/policy/block/:pubkey`
+- [x] `GET /:relayId/policy/blocked`
+
+### Média prioridade
+
+- [ ] `DELETE /:relayId/events` — apagar eventos por filtro `{ kinds?, authors?, since?, until? }`
+- [ ] `GET /:relayId/events/count` — contagem sem payload completo
+- [ ] `POST /:relayId/policy/allow/batch` — body `{ pubkeys: string[] }`, máx. 100
+
+### v1.0 Lightning
+
+- [ ] `GET /:relayId/subscribers` — lista pubkeys com expiração de acesso pago
+- [ ] `POST /:relayId/invoice` — gerar invoice LNbits para nova subscrição
 
 ---
 

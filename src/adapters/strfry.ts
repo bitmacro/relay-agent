@@ -386,3 +386,69 @@ export async function allowPubkey(pubkey: string, cfg: StrfryConfig | null = nul
   }
   await writeWhitelist(resolved.whitelistPath, filtered);
 }
+
+/** Remove a plain allow line (hex pubkey) from whitelist.txt. Does not remove `!` block lines. */
+export async function removeAllowPubkey(pubkey: string, cfg: StrfryConfig | null = null): Promise<boolean> {
+  const resolved = resolveConfig(cfg);
+  const pk = pubkey.toLowerCase();
+  if (!isValidPubkey(pk)) return false;
+  return withStrfryMutex(resolved.strfryDb, async () => {
+    const lines = await readWhitelist(resolved.whitelistPath);
+    let found = false;
+    const filtered = lines.filter((l) => {
+      const t = l.trim();
+      if (t.startsWith("#")) return true;
+      if (t.startsWith("!")) return true;
+      if (t.toLowerCase() === pk) {
+        found = true;
+        return false;
+      }
+      return true;
+    });
+    if (!found) return false;
+    await writeWhitelist(resolved.whitelistPath, filtered);
+    return true;
+  });
+}
+
+/** Remove a `!pubkey` block line from whitelist.txt. */
+export async function removeBlockPubkey(pubkey: string, cfg: StrfryConfig | null = null): Promise<boolean> {
+  const resolved = resolveConfig(cfg);
+  const pk = pubkey.toLowerCase();
+  if (!isValidPubkey(pk)) return false;
+  return withStrfryMutex(resolved.strfryDb, async () => {
+    const lines = await readWhitelist(resolved.whitelistPath);
+    let found = false;
+    const filtered = lines.filter((l) => {
+      const t = l.trim();
+      if (!t.startsWith("!")) return true;
+      if (t.slice(1).toLowerCase() === pk) {
+        found = true;
+        return false;
+      }
+      return true;
+    });
+    if (!found) return false;
+    await writeWhitelist(resolved.whitelistPath, filtered);
+    return true;
+  });
+}
+
+/** All pubkeys currently blocked (`!hex` lines) in whitelist.txt. */
+export async function listBlockedPubkeys(
+  cfg: StrfryConfig | null = null
+): Promise<{ blocked: string[]; count: number }> {
+  const resolved = resolveConfig(cfg);
+  return withStrfryMutex(resolved.strfryDb, async () => {
+    const lines = await readWhitelist(resolved.whitelistPath);
+    const blocked: string[] = [];
+    for (const line of lines) {
+      const t = line.trim();
+      if (!t || t.startsWith("#")) continue;
+      if (!t.startsWith("!")) continue;
+      const hex = t.slice(1).toLowerCase();
+      if (isValidPubkey(hex)) blocked.push(hex);
+    }
+    return { blocked, count: blocked.length };
+  });
+}
