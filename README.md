@@ -100,7 +100,7 @@ cd relay-agent && docker compose up -d
 ```bash
 # v0.2: health lists relay IDs and version
 curl http://localhost:7810/health
-# {"status":"ok","version":"0.2.3","relayIds":["public","private","paid"],...}
+# {"status":"ok","version":"0.2.4","relayIds":["public","private","paid"],...}
 # Per-relay: GET /:relayId/health includes the same package version field.
 
 # v0.2: stats for a specific relay (replace TOKEN and relay id)
