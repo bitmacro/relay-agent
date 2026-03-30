@@ -1,5 +1,7 @@
 # @bitmacro/relay-agent
 
+![BitMacro relay-agent](https://raw.githubusercontent.com/bitmacro/relay-agent/main/.github/social-preview.png)
+
 [![CI](https://github.com/bitmacro/relay-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/bitmacro/relay-agent/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@bitmacro/relay-agent.svg)](https://www.npmjs.com/package/@bitmacro/relay-agent)
 [![Docker GHCR](https://img.shields.io/badge/ghcr.io-bitmacro%2Frelay-agent-2496ED?logo=docker)](https://github.com/bitmacro/relay-agent/pkgs/container/relay-agent)
