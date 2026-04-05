@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-03-31
+
+### Fixed
+
+- **`allowPubkey` (whitelist write)** — normalize hex to lowercase, remove duplicate allow lines and matching `!pubkey` block lines before appending so policy file stays consistent with `getPolicyEntries`.
+
 ## [0.2.3] - 2026-03-24
 
 ### Fixed
