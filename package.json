@@ -1,6 +1,6 @@
 {
   "name": "@bitmacro/relay-agent",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "REST API agent for managing Nostr relays without touching the terminal",
   "license": "MIT",
   "author": "BitMacro <contact@bitmacro.io>",
@@ -39,14 +39,15 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
-    "hono": "^4.6.0",
-    "@hono/node-server": "^1.13.0"
+    "@hono/node-server": "^1.13.0",
+    "bech32": "^2.0.0",
+    "hono": "^4.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.6.0",
     "tsup": "^8.3.0",
     "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
     "vitest": "^2.1.0"
   }
 }

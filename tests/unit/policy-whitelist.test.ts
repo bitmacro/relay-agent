@@ -72,4 +72,30 @@ describe("policy whitelist file ops (strfry adapter)", () => {
     expect(count).toBe(1);
     expect(blocked).toEqual([PK_BLOCKED]);
   });
+
+  it("allowPubkey adds # npub comment and hex line", async () => {
+    await writeFile(wlPath, "", "utf-8");
+    await strfry.allowPubkey(PK_ALLOWED, { ...cfg, whitelistPath: wlPath });
+    const text = await readFile(wlPath, "utf-8");
+    expect(text).toContain(PK_ALLOWED);
+    expect(text).toMatch(/^# npub1/m);
+  });
+
+  it("allowPubkey adds optional label before em dash npub", async () => {
+    await writeFile(wlPath, "", "utf-8");
+    await strfry.allowPubkey(PK_ALLOWED, { ...cfg, whitelistPath: wlPath }, { label: "Alice" });
+    const text = await readFile(wlPath, "utf-8");
+    expect(text).toContain("# Alice — npub1");
+    expect(text).toContain(PK_ALLOWED);
+  });
+
+  it("removeAllowPubkey removes preceding # comment for that allow line", async () => {
+    await writeFile(wlPath, "", "utf-8");
+    await strfry.allowPubkey(PK_ALLOWED, { ...cfg, whitelistPath: wlPath }, { label: "Bob" });
+    const ok = await strfry.removeAllowPubkey(PK_ALLOWED, { ...cfg, whitelistPath: wlPath });
+    expect(ok).toBe(true);
+    const text = await readFile(wlPath, "utf-8");
+    expect(text).not.toContain(PK_ALLOWED);
+    expect(text).not.toContain("# Bob");
+  });
 });

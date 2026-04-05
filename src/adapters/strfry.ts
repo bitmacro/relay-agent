@@ -12,6 +12,7 @@ import { readFile, writeFile, mkdir } from "fs/promises";
 import { dirname } from "path";
 import { existsSync } from "fs";
 import type { NostrFilter, NostrEvent, RelayStats } from "./types.js";
+import { hexToNpub, sanitizeWhitelistLabel } from "../lib/npub.js";
 
 const SPAWN_TIMEOUT_MS = 30_000;
 
@@ -169,8 +170,14 @@ const strfryLocks = new Map<string, Promise<void>>();
 
 async function withStrfryMutex<T>(strfryDb: string, fn: () => Promise<T>): Promise<T> {
   const prev = strfryLocks.get(strfryDb) ?? Promise.resolve();
-  const work = prev.then(() => fn());
-  strfryLocks.set(strfryDb, work.finally(() => {}));
+  const work: Promise<T> = prev.then(() => fn());
+  strfryLocks.set(
+    strfryDb,
+    work.then(
+      () => undefined,
+      () => undefined
+    )
+  );
   return work;
 }
 
@@ -376,18 +383,34 @@ export async function blockPubkey(pubkey: string, cfg: StrfryConfig | null = nul
   await deleteByPubkey(pubkey, cfg);
 }
 
-export async function allowPubkey(pubkey: string, cfg: StrfryConfig | null = null): Promise<void> {
+export async function allowPubkey(
+  pubkey: string,
+  cfg: StrfryConfig | null = null,
+  opts?: { label?: string }
+): Promise<void> {
   const resolved = resolveConfig(cfg);
   const pk = pubkey.trim().toLowerCase();
   if (!isValidPubkey(pk)) throw new Error("invalid pubkey");
   const lines = await readWhitelist(resolved.whitelistPath);
-  const filtered = lines.filter((l) => {
-    const t = l.trim();
-    if (t.startsWith("!")) return `${t.slice(1).toLowerCase()}` !== pk;
-    if (isValidPubkey(t)) return t.toLowerCase() !== pk;
-    return true;
-  });
-  filtered.push(pk);
+  const toRemove = new Set<number>();
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (t.startsWith("!") && t.slice(1).toLowerCase() === pk) {
+      toRemove.add(i);
+      continue;
+    }
+    if (isValidPubkey(t) && t.toLowerCase() === pk) {
+      toRemove.add(i);
+      if (i > 0 && lines[i - 1].trim().startsWith("#")) {
+        toRemove.add(i - 1);
+      }
+    }
+  }
+  const filtered = lines.filter((_, i) => !toRemove.has(i));
+  const npub = hexToNpub(pk);
+  const labelRaw = opts?.label?.trim() ? sanitizeWhitelistLabel(opts.label) : "";
+  const commentLine = labelRaw ? `# ${labelRaw} — ${npub}` : `# ${npub}`;
+  filtered.push(commentLine, pk);
   await writeWhitelist(resolved.whitelistPath, filtered);
 }
 
@@ -398,17 +421,21 @@ export async function removeAllowPubkey(pubkey: string, cfg: StrfryConfig | null
   if (!isValidPubkey(pk)) return false;
   return withStrfryMutex(resolved.strfryDb, async () => {
     const lines = await readWhitelist(resolved.whitelistPath);
+    const toRemove = new Set<number>();
     let found = false;
-    const filtered = lines.filter((l) => {
-      const t = l.trim();
-      if (t.startsWith("#")) return true;
-      if (t.startsWith("!")) return true;
+    for (let i = 0; i < lines.length; i++) {
+      const t = lines[i].trim();
+      if (t.startsWith("#")) continue;
+      if (t.startsWith("!")) continue;
       if (t.toLowerCase() === pk) {
         found = true;
-        return false;
+        toRemove.add(i);
+        if (i > 0 && lines[i - 1].trim().startsWith("#")) {
+          toRemove.add(i - 1);
+        }
       }
-      return true;
-    });
+    }
+    const filtered = lines.filter((_, i) => !toRemove.has(i));
     if (!found) return false;
     await writeWhitelist(resolved.whitelistPath, filtered);
     return true;

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-04-05
+
+### Added
+
+- **`POST …/policy/allow`** accepts optional **`label`** (string) for a human-readable comment line in `whitelist.txt` before the hex pubkey (`# label — npub1…` or `# npub1…` when omitted).
+- **`bech32`** — npub derived from hex for those comment lines.
+
+### Fixed
+
+- **`withStrfryMutex`** — chain tail is `Promise<void>` so the lock map type-checks correctly.
+
+### Changed
+
+- **`removeAllowPubkey`** — when removing an allow hex line, drops a **preceding `#` comment line** if present (pairs created by `allowPubkey`).
+
 ## [0.2.5] - 2026-03-31
 
 ### Fixed

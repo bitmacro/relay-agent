@@ -74,11 +74,13 @@ policyLegacyRoutes.post("/policy/block", async (c) => {
 });
 policyLegacyRoutes.post("/policy/allow", async (c) => {
   try {
-    const body = await c.req.json<{ pubkey: string }>();
-    const { pubkey } = body;
+    const body = await c.req.json<{ pubkey: string; label?: string }>();
+    const { pubkey, label } = body;
     if (!pubkey || typeof pubkey !== "string") return c.json({ error: "pubkey is required" }, 400);
     if (!PUBKEY_REGEX.test(pubkey.toLowerCase())) return c.json({ error: "invalid pubkey format" }, 400);
-    await strfry.allowPubkey(pubkey, null);
+    const labelOpt =
+      typeof label === "string" && label.trim() ? { label: label.trim() } : undefined;
+    await strfry.allowPubkey(pubkey, null, labelOpt);
     return c.json({ allowed: pubkey });
   } catch {
     return c.json({ error: "relay unavailable" }, 503);
@@ -157,11 +159,13 @@ policyMultiRoutes.post("/:relayId/policy/allow", async (c) => {
   const instance = getRelayInstance(relayId);
   if (!instance) return c.json({ error: "relay not found", relayId }, 404);
   try {
-    const body = await c.req.json<{ pubkey: string }>();
-    const { pubkey } = body;
+    const body = await c.req.json<{ pubkey: string; label?: string }>();
+    const { pubkey, label } = body;
     if (!pubkey || typeof pubkey !== "string") return c.json({ error: "pubkey is required" }, 400);
     if (!PUBKEY_REGEX.test(pubkey.toLowerCase())) return c.json({ error: "invalid pubkey format" }, 400);
-    await strfry.allowPubkey(pubkey, cfgFromInstance(instance));
+    const labelOpt =
+      typeof label === "string" && label.trim() ? { label: label.trim() } : undefined;
+    await strfry.allowPubkey(pubkey, cfgFromInstance(instance), labelOpt);
     return c.json({ allowed: pubkey });
   } catch {
     return c.json({ error: "relay unavailable" }, 503);

@@ -102,7 +102,7 @@ cd relay-agent && docker compose up -d
 ```bash
 # v0.2: health lists relay IDs and version
 curl http://localhost:7810/health
-# {"status":"ok","version":"0.2.5","relayIds":["public","private","paid"],...}
+# {"status":"ok","version":"0.2.6","relayIds":["public","private","paid"],...}
 # Per-relay: GET /:relayId/health includes the same package version field.
 
 # v0.2: stats for a specific relay (replace TOKEN and relay id)
@@ -125,7 +125,7 @@ curl -H "Authorization: Bearer TOKEN" http://localhost:7810/private/stats
 | `GET` | `/:relayId/policy` | Policy entries | Bearer |
 | `GET` | `/:relayId/policy/blocked` | List blocked pubkeys (`!` lines in whitelist) | Bearer |
 | `POST` | `/:relayId/policy/block` | Block pubkey | Bearer |
-| `POST` | `/:relayId/policy/allow` | Allow pubkey | Bearer |
+| `POST` | `/:relayId/policy/allow` | Allow pubkey (`{ "pubkey", "label"? }`) | Bearer |
 | `DELETE` | `/:relayId/policy/allow/:pubkey` | Remove pubkey from allow list (plain line) | Bearer |
 | `DELETE` | `/:relayId/policy/block/:pubkey` | Remove `!pubkey` block line | Bearer |
 | `GET` | `/:relayId/users` | List pubkeys | Bearer |
@@ -187,11 +187,31 @@ Authorization: Bearer <your-token>
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `RELAY_INSTANCES` | — | JSON array of `{id, token, strfryConfig, strfryDb, whitelistPath?}` |
+| `RELAY_INSTANCES` | — | JSON array of `{id, token, strfryConfig, strfryDb, whitelistPath?}` — see [strfry.conf vs relay-agent](#strfryconf-vs-relay-agent-v02) |
 | `RELAY_AGENT_TOKEN` | — | Not used when RELAY_INSTANCES is set |
 | `STRFRY_BIN` | `strfry` | Path to strfry binary |
 | `PORT` | `7800` | HTTP server port |
 | `ALLOWED_ORIGINS` | — | Comma-separated extra CORS origins |
+
+### strfry.conf vs relay-agent (v0.2)
+
+The agent runs `strfry` with **cwd = `dirname(strfryDb)`**. The `db = …` line in `strfry.conf` is resolved relative to that directory.
+
+- In each relay’s **`strfry.conf`**, use:
+  ```text
+  db = "./data/"
+  ```
+- In **`RELAY_INSTANCES`**, set **`strfryDb`** to the LMDB directory inside the agent container, e.g.:
+  ```text
+  "/app/nostr/<relayId>/data"
+  ```
+  where `<relayId>` matches your logical id (`public`, `private`, `paid`). Mount the host folder to that path (see `docker-compose.relay-agent.yml`).
+
+Then `./data/` resolves to `/app/nostr/<relayId>/data` — the same files the relay uses if the host `nostr/<relayId>/data` is mounted consistently.
+
+**Relay containers** (`strfry relay`) often use **`working_dir: /app`** and mount the same host `data/` at **`/app/data`**, still with `db = "./data/"`. That is a different in-container path but the **same host directory** as the agent mount.
+
+**Breaking change:** Older setups used `db = "./strfry-db/"` and `strfryDb` ending in `strfry-db`. Migrate to `db = "./data/"` and `strfryDb` ending in `/data`, and align Docker volume targets on both the agent and relay services.
 
 ### v0.1 single-relay
 
