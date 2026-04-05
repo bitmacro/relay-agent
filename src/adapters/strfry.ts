@@ -378,12 +378,16 @@ export async function blockPubkey(pubkey: string, cfg: StrfryConfig | null = nul
 
 export async function allowPubkey(pubkey: string, cfg: StrfryConfig | null = null): Promise<void> {
   const resolved = resolveConfig(cfg);
+  const pk = pubkey.trim().toLowerCase();
+  if (!isValidPubkey(pk)) throw new Error("invalid pubkey");
   const lines = await readWhitelist(resolved.whitelistPath);
-  const blockLine = `!${pubkey}`;
-  const filtered = lines.filter((l) => l !== blockLine);
-  if (!filtered.includes(pubkey)) {
-    filtered.push(pubkey);
-  }
+  const filtered = lines.filter((l) => {
+    const t = l.trim();
+    if (t.startsWith("!")) return `${t.slice(1).toLowerCase()}` !== pk;
+    if (isValidPubkey(t)) return t.toLowerCase() !== pk;
+    return true;
+  });
+  filtered.push(pk);
   await writeWhitelist(resolved.whitelistPath, filtered);
 }
 
