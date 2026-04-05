@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-04-05
+
+### Fixed
+
+- **Docker runtime** — bundle `bech32` via `tsup` `noExternal`. The production image only copies `dist/` (no `node_modules`), so v0.2.6 crashed with `ERR_MODULE_NOT_FOUND: bech32`.
+
 ## [0.2.6] - 2026-04-05
 
 ### Added

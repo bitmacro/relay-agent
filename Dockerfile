@@ -16,6 +16,7 @@ RUN apk add --no-cache nodejs
 
 WORKDIR /app
 
+# No node_modules here — everything the app imports at runtime must be bundled into dist/ (see tsup noExternal).
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 COPY strfry.conf /app/strfry.conf

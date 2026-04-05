@@ -1,6 +1,6 @@
 {
   "name": "@bitmacro/relay-agent",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "REST API agent for managing Nostr relays without touching the terminal",
   "license": "MIT",
   "author": "BitMacro <contact@bitmacro.io>",
