@@ -154,6 +154,35 @@ function getStrfryCwd(dbPath: string): string | undefined {
   return parent !== "." ? parent : undefined;
 }
 
+/** Parse `strfry --version` output (some builds print only to stderr). */
+export function parseStrfryCliVersion(stdout: string, stderr: string): string {
+  const combined = `${stdout}\n${stderr}`.trim();
+  if (!combined) return "unknown";
+  const patterns = [
+    /strfry\s+v?([\d.]+(?:[-+.]?[0-9A-Za-z]+)*)/i,
+    /\bv?(\d+\.\d+\.\d+(?:[-.][0-9A-Za-z]+)*)\b/,
+  ];
+  for (const re of patterns) {
+    const m = combined.match(re);
+    if (m?.[1]) return m[1];
+  }
+  return "unknown";
+}
+
+/** Só `strfry --version` — não usa mutex LMDB (adequado para /health). */
+export async function getStrfryBinaryVersion(cfg: StrfryConfig | null): Promise<string> {
+  const resolved = resolveConfig(cfg);
+  const cwd = getStrfryCwd(resolved.strfryDb);
+  try {
+    const { stdout, stderr } = await spawnAsync(STRFRY_BIN, ["--version"], {
+      cwd: cwd || undefined,
+    });
+    return parseStrfryCliVersion(stdout, stderr);
+  } catch {
+    return "unknown";
+  }
+}
+
 function buildFilterJson(filter: NostrFilter): string {
   const obj: Record<string, unknown> = {};
   if (filter.ids?.length) obj.ids = filter.ids;
@@ -280,11 +309,10 @@ export async function getStats(cfg: StrfryConfig | null = null): Promise<RelaySt
   total_events = await spawnScanCount(resolved);
 
   try {
-    const { stdout } = await spawnAsync(STRFRY_BIN, ["--version"], {
+    const { stdout, stderr } = await spawnAsync(STRFRY_BIN, ["--version"], {
       cwd: cwd || undefined,
     });
-    const match = stdout.match(/strfry\s+([\d.]+)/i);
-    strfry_version = match?.[1] ?? "unknown";
+    strfry_version = parseStrfryCliVersion(stdout, stderr);
   } catch {
     // ignore
   }

@@ -11,7 +11,7 @@
 [![Hono](https://img.shields.io/badge/Hono-4-E36002?logo=hono)](https://hono.dev/)
 [![Vitest](https://img.shields.io/badge/test-Vitest-6E9F18?logo=vitest)](https://vitest.dev/)
 [![tsup](https://img.shields.io/badge/build-tsup-EFC942)](https://github.com/egoist/tsup)
-[![strfry](https://img.shields.io/badge/runtime-strfry%20CLI-394AAB)](https://hub.docker.com/r/dockurr/strfry)
+[![strfry](https://img.shields.io/badge/runtime-strfry%20CLI-394AAB)](https://github.com/hoytech/strfry/pkgs/container/strfry)
 
 **[→ Web UI: relay-panel.bitmacro.io](https://relay-panel.bitmacro.io)**  
 **[→ BitMacro Ecosystem: bitmacro.io](https://bitmacro.io)**

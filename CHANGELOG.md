@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-04-08
+
+### Added
+
+- **`strfry_version` on health** — `GET /health` (single-relay) and `GET /:relayId/health` (multi-relay) include the strfry CLI version from `STRFRY_BIN --version`, using the same per-relay `cwd` as the adapter.
+
+### Changed
+
+- **Dockerfile** — runtime base image is **`ghcr.io/hoytech/strfry:latest`** (official build), matching production relay containers instead of the unofficial dockurr fork.
+- **`strfry --version` parsing** — reads **stdout and stderr**, broader semver pattern (some builds print version only to stderr).
+
+### Documentation
+
+- **README** — strfry badge links to the official GHCR package.
+
 ## [0.2.7] - 2026-04-05
 
 ### Fixed

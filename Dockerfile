@@ -9,8 +9,8 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Stage 2: Runtime — strfry base provides binary + libs (lmdb, zstd, ssl)
-FROM dockurr/strfry:1.0.4
+# Stage 2: Runtime — official hoytech/strfry (same image as relay_public/private/paid)
+FROM ghcr.io/hoytech/strfry:latest
 
 RUN apk add --no-cache nodejs
 
