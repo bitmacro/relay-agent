@@ -298,4 +298,19 @@ The relay-agent is **stateless** — it has no database. State lives in Supabase
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and PR guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and PR guidelines.  
+Issues and PRs are welcome — bug fixes, UI improvements, and new relay-agent integrations.
+
+This project is maintained by [BitMacro](https://bitmacro.io).
+
+## Contributors
+
+<a align="center" href="https://github.com/bitmacro/relay-agent/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=bitmacro/relay-agent" />
+</a>
+
+---
+
+## License
+
+MIT. See [LICENSE](LICENSE).
