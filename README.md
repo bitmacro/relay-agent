@@ -274,6 +274,12 @@ The relay-agent is **stateless** — it has no database. State lives in Supabase
    }
    ```
    Then restart the relay: `docker restart relay_private`
+   **Stale reader slots** (after crashes / SIGABRT) can still wedge the relay until cleared. Stop **every** container that mounts that LMDB directory (`relay_*` + `relay-agent`), then on the **host** (path = host dir that contains `data.mdb`):
+   ```bash
+   # Debian/Ubuntu: lmdb-utils provides mdb_stat — not mdb_reader_check
+   sudo mdb_stat -e -rr /home/server/nostr/public/data
+   ```
+   Double `-r` checks the reader table and removes stale entries. Then start the relay container(s), then `relay-agent`.
 
 3. **Verify db path** — relay-agent mounts `./nostr/private/data:/app/nostr/private/data` so it matches production `strfry.conf` with `db="./data/"` (same layout as `relay_private`). If you see `mdb_env_open: No such file or directory`, the mount path or `db=` in `strfry.conf` does not match. Check your main `docker-compose.yml`:
    ```bash
