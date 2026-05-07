@@ -1,21 +1,22 @@
 # Backlog — relay-agent
 
-Ideias e melhorias sem compromisso de roadmap; não substitui Issues no GitHub.
+Ideas and improvements; not a committed roadmap. Prefer GitHub Issues for tracked work.
 
 ---
 
-## Alta relevância — LMDB com `strfry relay` e CLI no mesmo diretório
+## LMDB contention: `strfry relay` and CLI on the same directory
 
-**Contexto:** Com `RELAY_INSTANCES`, o agent corre subcomandos `strfry` (`scan`, etc.) contra a mesma pasta LMDB que o contentor `strfry relay`. Em relays de **elevada carga** (típico **público**) isto aumenta contenção LMDB (`mdb_txn_begin: Resource temporarily unavailable`), agravado por **leitores stale** após crashes. Em **private/paid** o mesmo mecanismo existe, mas com carga menor costuma passar despercebido.
+**Context:** With `RELAY_INSTANCES`, the agent runs `strfry` subcommands (`scan`, stats, etc.) against the same LMDB directory as the running `strfry relay` container. Under **high write/read load** (typical **public** relays) this increases LMDB contention (`mdb_txn_begin: Resource temporarily unavailable`); **private/paid** paths are usually lighter.
 
-**Decisão de operação (BitMacro):** relay **público** na VPS **sem** relay-agent; relay-agent apenas no EQ14 para **private** + **paid** (baixa carga). Ver `bitmacro-docs/attachments/RELAY_SIGNER_MIGRATION_CHECKLIST.md`.
+**Mitigation shipped (agent ≥ 0.2.9):** env **`RELAY_STATS_SKIP_EVENT_COUNT_IDS`** — comma-separated instance `id`s — skips the heavy `strfry scan "{}"` on **`GET /:id/stats`**; returns **`total_events: null`**, keeps `db_size`, uptime, version. BitMacro VPS compose sets `public` alongside **`relay-agent-vps`** ([`bitmacro-cloud`](https://github.com/bitmacro/bitmacro-cloud) `docker-compose.yml`).
 
-**Possíveis ajustes no agent (futuro):**
+**Historical (BitMacro):** During the 2026 relay split, the first cut was **no agent** on the **public** VPS stack to avoid contention; that was **revisited** when `relay-agent-vps` shipped with skip-scan for `public`. See `bitmacro-docs/attachments/RELAY_SIGNER_MIGRATION_CHECKLIST.md`.
 
-- [x] **Stats / contagens:** variável **`RELAY_STATS_SKIP_EVENT_COUNT_IDS`** (ids separados por vírgula) — omite `strfry scan "{}"` em **`GET /:id/stats`**; **`total_events`** vem **`null`**; mantêm-se `db_size`, uptime, versão. **Compose BitMacro VPS:** `RELAY_STATS_SKIP_EVENT_COUNT_IDS=public` desde **relay-agent 0.2.9**.
-- [ ] **Resiliência:** backoff explícito e erros menos “duros” quando LMDB devolve `EAGAIN`, com métricas/log estruturado.
-- [ ] **Documentação:** cookbook “alto volume” vs “painel apenas private/paid” e quando **não** montar uma instância no agent.
+**Still open:**
+
+- [ ] **Resilience:** explicit backoff / softer errors on LMDB `EAGAIN`, structured metrics/logs.
+- [ ] **Docs:** cookbook for “high volume” relays vs catalogue-only relays and when **not** to mount an agent instance.
 
 ---
 
-*Última actualização: 2026-05-07.*
+*Last updated: 2026-05-07.*
