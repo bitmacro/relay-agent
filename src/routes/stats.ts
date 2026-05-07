@@ -3,6 +3,17 @@ import * as strfry from "../adapters/strfry.js";
 import { getRelayInstance } from "../config/relay-instances.js";
 import type { RelayStats } from "../types/api.js";
 
+/** Lista `RELAY_STATS_SKIP_EVENT_COUNT_IDS` (ex.: `public`) → não corre `strfry scan "{}"` no stats (LMDB sob carga). */
+function relayIdsSkippingEventCount(): Set<string> {
+  const raw = process.env.RELAY_STATS_SKIP_EVENT_COUNT_IDS ?? "";
+  return new Set(
+    raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+}
+
 /** v0.1.x: /stats (single relay) */
 export const statsLegacyRoutes = new Hono();
 statsLegacyRoutes.get("/stats", async (c) => {
@@ -33,7 +44,8 @@ statsMultiRoutes.get("/:relayId/stats", async (c) => {
       strfryDb: instance.strfryDb,
       whitelistPath: instance.whitelistPath,
     };
-    const raw = await strfry.getStats(cfg);
+    const skipCount = relayIdsSkippingEventCount().has(relayId);
+    const raw = await strfry.getStats(cfg, { skipTotalEventCount: skipCount });
     const stats: RelayStats = {
       total_events: raw.total_events,
       db_size: raw.db_size,

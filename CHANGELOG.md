@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-05-07
+
+### Added
+
+- **`RELAY_STATS_SKIP_EVENT_COUNT_IDS`** — lista opcional de `id` multi-relay (ex.: `public`). Para esses relays, **`GET /:relayId/stats`** **não** corre `strfry scan "{}"`; devolve **`total_events: null`** e mantém `db_size`, uptime e versão CLI. Reduz contenção LMDB em relays públicos com agent no mesmo host (ver `BACKLOG.md`).
+
+### Changed
+
+- **`RelayStats.total_events`** pode ser **`null`** nos JSON das rotas `/stats` (painel já trata como “—”).
+
 ## [0.2.8] - 2026-04-08
 
 ### Added

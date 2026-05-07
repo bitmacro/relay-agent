@@ -299,14 +299,19 @@ function spawnScanCount(resolved: { strfryConfig?: string; strfryDb: string }): 
   });
 }
 
-export async function getStats(cfg: StrfryConfig | null = null): Promise<RelayStats> {
+export async function getStats(
+  cfg: StrfryConfig | null = null,
+  opts?: { skipTotalEventCount?: boolean }
+): Promise<RelayStats> {
   const resolved = resolveConfig(cfg);
   return withStrfryMutex(resolved.strfryDb, async () => {
-  let total_events = 0;
+  let total_events: number | null = null;
   let strfry_version = "unknown";
 
   const cwd = getStrfryCwd(resolved.strfryDb);
-  total_events = await spawnScanCount(resolved);
+  if (!opts?.skipTotalEventCount) {
+    total_events = await spawnScanCount(resolved);
+  }
 
   try {
     const { stdout, stderr } = await spawnAsync(STRFRY_BIN, ["--version"], {

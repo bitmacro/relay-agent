@@ -18,7 +18,8 @@ export interface NostrEvent {
 }
 
 export interface RelayStats {
-  total_events: number;
+  /** `null` quando a contagem foi omitida (ex.: relay de alto volume — ver `RELAY_STATS_SKIP_EVENT_COUNT_IDS`). */
+  total_events: number | null;
   db_size: string;
   uptime_seconds: number;
   strfry_version: string;

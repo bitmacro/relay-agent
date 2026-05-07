@@ -45,7 +45,7 @@ describe("strfry adapter integration", () => {
       expect(stats).toHaveProperty("db_size");
       expect(stats).toHaveProperty("uptime_seconds");
       expect(stats).toHaveProperty("strfry_version");
-      expect(typeof stats.total_events).toBe("number");
+      expect(stats.total_events === null || typeof stats.total_events === "number").toBe(true);
       expect(typeof stats.db_size).toBe("string");
     },
     { timeout: 15000 }

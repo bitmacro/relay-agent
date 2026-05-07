@@ -5,7 +5,8 @@
 
 /** Relay statistics (GET /stats) */
 export interface RelayStats {
-  total_events: number;
+  /** `null` quando o agent omite o `scan` pesado (relay de alto volume). */
+  total_events: number | null;
   db_size: string;
   uptime: number;
   version: string;

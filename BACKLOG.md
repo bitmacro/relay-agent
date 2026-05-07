@@ -12,10 +12,10 @@ Ideias e melhorias sem compromisso de roadmap; não substitui Issues no GitHub.
 
 **Possíveis ajustes no agent (futuro):**
 
-- [ ] **Stats / contagens:** evitar `strfry scan "{}"` (ou uso equivalente pesado) em BD “quente”; explorar contagens só leitura (`mdb_stat`, metadados, ou cache TTL) onde fizer sentido.
+- [x] **Stats / contagens:** variável **`RELAY_STATS_SKIP_EVENT_COUNT_IDS`** (ids separados por vírgula) — omite `strfry scan "{}"` em **`GET /:id/stats`**; **`total_events`** vem **`null`**; mantêm-se `db_size`, uptime, versão. **Compose BitMacro VPS:** `RELAY_STATS_SKIP_EVENT_COUNT_IDS=public` desde **relay-agent 0.2.9**.
 - [ ] **Resiliência:** backoff explícito e erros menos “duros” quando LMDB devolve `EAGAIN`, com métricas/log estruturado.
 - [ ] **Documentação:** cookbook “alto volume” vs “painel apenas private/paid” e quando **não** montar uma instância no agent.
 
 ---
 
-*Última actualização: 2026-05-06.*
+*Última actualização: 2026-05-07.*
